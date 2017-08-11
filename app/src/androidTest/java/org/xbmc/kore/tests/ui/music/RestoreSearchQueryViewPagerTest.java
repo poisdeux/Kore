@@ -47,8 +47,6 @@ public class RestoreSearchQueryViewPagerTest extends AbstractTestClass<MusicActi
     private final int ARTIST_COMPLETE_LIST_SIZE = 229;
     private final int ALBUM_COMPLETE_LIST_SIZE = 235;
 
-    private LoaderIdlingResource loaderIdlingResource;
-
     @Rule
     public ActivityTestRule<MusicActivity> mActivityRule = new ActivityTestRule<>(
             MusicActivity.class);
@@ -174,13 +172,12 @@ public class RestoreSearchQueryViewPagerTest extends AbstractTestClass<MusicActi
      */
     @Test
     public void searchSwitchTabRotateTest() {
-        Activity activity = mActivityRule.getActivity();
+        Activity activity = getActivity();
 
         EspressoTestUtils.enterSearchQuery(activity, ARTIST_SEARCH_QUERY);
         clickAlbumsTab();
         EspressoTestUtils.rotateDevice(activity);
         EspressoTestUtils.clickMenuItem(activity, activity.getString(R.string.action_search), R.id.action_search);
-
         EspressoTestUtils.checkTextInSearchQuery("");
         EspressoTestUtils.checkListMatchesSearchQuery("", ALBUM_COMPLETE_LIST_SIZE, R.id.list);
     }

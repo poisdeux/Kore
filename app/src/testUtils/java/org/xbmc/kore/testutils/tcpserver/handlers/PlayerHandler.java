@@ -290,6 +290,7 @@ public class PlayerHandler implements JSONConnectionHandlerManager.ConnectionHan
         item.addDuration(660);
         item.addFile("/Users/martijn/Projects/dummymediafiles/media/movies/Elephants Dream (2006).mp4");
         item.addGenre("Animation");
+        item.addLabel("Label unknown");
         item.addRating(0);
         item.addType(Player.GetItem.TYPE.MOVIE);
         item.addYear(2006);
@@ -308,6 +309,7 @@ public class PlayerHandler implements JSONConnectionHandlerManager.ConnectionHan
         item.addRating(7);
         item.addType(Player.GetItem.TYPE.EPISODE);
         item.addFirstaired("2001-10-03");
+        item.addLabel("Label unknown");
         item.addEpisode(1);
         item.addSeason(1);
         item.addDirector("Andy Cadiff");
@@ -345,6 +347,7 @@ public class PlayerHandler implements JSONConnectionHandlerManager.ConnectionHan
         item.addSeason(1);
         item.addDirector("Andy Cadiff");
         item.addTitle("Pilot");
+        item.addLabel("Label unknown");
         item.addType(Player.GetItem.TYPE.CHANNEL);
 
         return item;
@@ -357,6 +360,7 @@ public class PlayerHandler implements JSONConnectionHandlerManager.ConnectionHan
         item.addCast("", "", "Skipmode A1");
         item.addCast("", "", "Sparkline");
         item.addGenre("Addon");
+        item.addLabel("Label unknown");
         item.addType(Player.GetItem.TYPE.UNKNOWN);
 
         return item;
@@ -367,6 +371,7 @@ public class PlayerHandler implements JSONConnectionHandlerManager.ConnectionHan
         item.addTitle("Kore Artwork");
         item.addFile("/Users/martijn/Projects/Kore/art/screenshots/Kore_Artwork_Concept_2.png");
         item.addType(Player.GetItem.TYPE.PICTURE);
+        item.addLabel("Label unknown");
         return item;
     }
 }

@@ -45,7 +45,7 @@ public class JSONConnectionHandlerManager implements MockTcpServer.TcpServerConn
 
     private int responseCount;
 
-    private HashMap<String, ArrayList<JsonResponse>> clientResponses = new HashMap<>();
+    final private HashMap<String, ArrayList<JsonResponse>> clientResponses = new HashMap<>();
 
     public interface ConnectionHandler {
         /**
@@ -123,7 +123,7 @@ public class JSONConnectionHandlerManager implements MockTcpServer.TcpServerConn
 
         synchronized (clientResponses) {
             //Handle responses
-            Collection<ArrayList<JsonResponse>> jsonResponses = clientResponses.values();
+            Collection<ArrayList<JsonResponse>> jsonResponses = new ArrayList<>(clientResponses.values());
             for (ArrayList<JsonResponse> arrayList : jsonResponses) {
                 for (JsonResponse response : arrayList) {
                     stringBuffer.append(response.toJsonString() + "\n");
@@ -167,13 +167,13 @@ public class JSONConnectionHandlerManager implements MockTcpServer.TcpServerConn
     }
 
     private void addResponse(int id, ArrayList<JsonResponse> jsonResponses) {
-        ArrayList<JsonResponse> responses = clientResponses.get(String.valueOf(id));
-        if (responses == null) {
-            responses = new ArrayList<>();
-            synchronized (clientResponses) {
+        synchronized (clientResponses) {
+            ArrayList<JsonResponse> responses = clientResponses.get(String.valueOf(id));
+            if (responses == null) {
+                responses = new ArrayList<>();
                 clientResponses.put(String.valueOf(id), responses);
             }
+            responses.addAll(jsonResponses);
         }
-        responses.addAll(jsonResponses);
     }
 }

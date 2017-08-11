@@ -16,20 +16,26 @@
 
 package org.xbmc.kore.tests.ui;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.support.test.espresso.Espresso;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.PreferenceManager;
+import android.view.View;
 
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 import org.xbmc.kore.host.HostInfo;
 import org.xbmc.kore.jsonrpc.HostConnection;
@@ -46,7 +52,11 @@ import org.xbmc.kore.testutils.tcpserver.handlers.PlayerHandler;
 import org.xbmc.kore.ui.sections.hosts.HostFragmentManualConfiguration;
 import org.xbmc.kore.utils.LogUtils;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 @RunWith(AndroidJUnit4.class)
 @Ignore
@@ -77,7 +87,21 @@ abstract public class AbstractTestClass<T extends AppCompatActivity> {
     private static ApplicationHandler applicationHandler;
     private static InputHandler inputHandler;
 
+    private Activity activity;
     private HostInfo hostInfo;
+
+    @Rule
+    public TestWatcher watchman = new TestWatcher() {
+        @Override
+        protected void failed(Throwable e, Description description) {
+            takeScreenshot(description.getClassName() + "." + description.getMethodName());
+        }
+
+        @Override
+        protected void succeeded(Description description) {
+
+        }
+    };
 
     @BeforeClass
     public static void setupMockTCPServer() throws Throwable {
@@ -107,6 +131,8 @@ abstract public class AbstractTestClass<T extends AppCompatActivity> {
         Utils.setLearnedAboutDrawerPreference(context, true);
         //Allow each test to change the shared preferences
         setSharedPreferences(context);
+
+        activity = getActivity();
 
         //Note: as the activity is not yet available in @BeforeClass we need
         //      to add the handler here
@@ -174,5 +200,47 @@ abstract public class AbstractTestClass<T extends AppCompatActivity> {
 
     public static InputHandler getInputHandler() {
         return inputHandler;
+    }
+
+    protected void takeScreenshot(String name) {
+        Date now = new Date();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd-hhmm");
+
+        try {
+            File path = new File(activity.getExternalCacheDir().getAbsolutePath() +
+                                 "/screenshots/");
+
+            if (!path.exists()) {
+                if (!path.mkdirs()) {
+                    LogUtils.LOGD("AbstractTestClass", "takeScreenshot: unable to create directory: " +path.toString());
+                    return;
+                }
+            }
+
+            if (!path.canWrite()) {
+                LogUtils.LOGD("AbstractTestClass", "takeScreenshot: unable to write to: " +path.toString());
+                return;
+            }
+
+            String filename = name + "-" + dateFormat.format(now) + ".jpg";
+            File imageFile = new File(path, filename);
+
+            LogUtils.LOGD("AbstractTestClass", "takeScreenshot: saving to " + imageFile.toString());
+
+            // create bitmap screen capture
+            View v1 = activity.getWindow().getDecorView().getRootView();
+            v1.setDrawingCacheEnabled(true);
+            Bitmap bitmap = Bitmap.createBitmap(v1.getDrawingCache());
+            v1.setDrawingCacheEnabled(false);
+
+            FileOutputStream outputStream = new FileOutputStream(imageFile);
+            int quality = 100;
+            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
+            outputStream.flush();
+            outputStream.close();
+        } catch (Throwable e) {
+            LogUtils.LOGD("AbstractTestClass", "takeScreenShot: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

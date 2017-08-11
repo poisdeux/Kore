@@ -22,10 +22,10 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.IBinder;
 import android.support.test.rule.ActivityTestRule;
+import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.preference.PreferenceManager;
 import android.util.Log;
-import android.view.Gravity;
 
 import org.xbmc.kore.R;
 import org.xbmc.kore.host.HostInfo;
@@ -36,6 +36,7 @@ import org.xbmc.kore.utils.LogUtils;
 
 import java.lang.reflect.Method;
 
+import static junit.framework.Assert.fail;
 import static org.xbmc.kore.ui.generic.NavigationDrawerFragment.PREF_USER_LEARNED_DRAWER;
 
 public class Utils {
@@ -56,17 +57,19 @@ public class Utils {
     }
 
     public static void openDrawer(final ActivityTestRule<?> activityTestRule) throws Throwable {
+        final DrawerLayout drawerLayout = (DrawerLayout) activityTestRule.getActivity().findViewById(R.id.drawer_layout);
         activityTestRule.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                DrawerLayout drawerLayout = (DrawerLayout) activityTestRule.getActivity().findViewById(R.id.drawer_layout);
-                drawerLayout.openDrawer(Gravity.LEFT);
+                drawerLayout.openDrawer(GravityCompat.START, false);
             }
         });
-        DrawerLayout drawerLayout = (DrawerLayout) activityTestRule.getActivity().findViewById(R.id.drawer_layout);
-        while(true) {
-            if (drawerLayout.isDrawerOpen(Gravity.LEFT))
-                return;
+
+        int timeout = 100;
+        while(!drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            Thread.sleep(100);
+            if (timeout-- == 0)
+                fail("Opening drawer timed out");
         }
     }
 

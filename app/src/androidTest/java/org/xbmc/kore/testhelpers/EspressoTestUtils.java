@@ -102,6 +102,18 @@ public class EspressoTestUtils {
     }
 
     /**
+     * Clicks the navigation drawer (hamburger) button in the toolbar.
+     */
+    public static void openNavigationDrawer() {
+        /**
+         * The image button in the toolbar used to open the navigation drawer has no ID we can use.
+         * In appcompat v7 it has a description "Open navigation drawer". We use this to find the
+         * button in the view and perform the click action.
+         */
+        onView(withContentDescription("Open navigation drawer")).perform(click());
+    }
+
+    /**
      * Clicks on the search menu item and enters the given search query
      * @param activity
      * @param query

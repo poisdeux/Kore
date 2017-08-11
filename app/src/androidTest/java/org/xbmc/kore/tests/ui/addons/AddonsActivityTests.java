@@ -17,7 +17,6 @@
 package org.xbmc.kore.tests.ui.addons;
 
 import android.content.Intent;
-import android.os.SystemClock;
 import android.support.test.rule.ActivityTestRule;
 import android.widget.TextView;
 
@@ -26,7 +25,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.xbmc.kore.R;
 import org.xbmc.kore.testhelpers.EspressoTestUtils;
-import org.xbmc.kore.testhelpers.Utils;
 import org.xbmc.kore.tests.ui.AbstractTestClass;
 import org.xbmc.kore.tests.ui.BaseMediaActivityTests;
 import org.xbmc.kore.ui.sections.addon.AddonsActivity;
@@ -42,14 +40,16 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.xbmc.kore.testhelpers.EspressoTestUtils.selectListItemPressBackAndCheckActionbarTitle;
 
 /**
- * Note: we use MoviesActivity here instead of AddonsActivity. The reason is that we use @Rule
- * to start the activity which is done prior to executing @Before. This results in a deadlock
- * situation.
+ *
+ * AddonsActivity doesn't use the local database to get a list of addons. But
+ * consults Kodi each time it is started.
+ * With Espresso this results in a deadlock situation as it waits for the activity to become
+ * idle which it never will.
  *
  * Normal startup procedure would be as follows:
  *
  * 1. Start MockTCPServer {@link AbstractTestClass#setupMockTCPServer()}
- * 2. Start activity {mActivityRule}
+ * 2. Start AddonsActivity {mActivityRule}
  * 3. Espresso waits for activity to become idle before calling {@link AbstractTestClass#setUp()}
  * 4. Add AddonsHandler {@link AbstractTestClass#setUp()}
  *
@@ -58,9 +58,14 @@ import static org.xbmc.kore.testhelpers.EspressoTestUtils.selectListItemPressBac
  * This is never send as the {@link org.xbmc.kore.testutils.tcpserver.handlers.AddonsHandler} is
  * added in {@link super#setUp()} which is never started by Espresso as it waits for
  * {@link org.xbmc.kore.ui.sections.addon.AddonsActivity} to become idle.
+ *
+ * We therefore first start another activity (MoviesActivity) from which we start the AddonsActivity.
  */
 public class AddonsActivityTests extends BaseMediaActivityTests<MoviesActivity> {
 
+    /**
+     * Note: we use MoviesActivity here instead of AddonsActivity. See above comment to know why
+     */
     @Rule
     public ActivityTestRule<MoviesActivity> mActivityRule = new ActivityTestRule<>(
             MoviesActivity.class);
@@ -78,6 +83,7 @@ public class AddonsActivityTests extends BaseMediaActivityTests<MoviesActivity> 
         Intent intent = new Intent(getActivity(), AddonsActivity.class);
         getActivity().startActivity(intent);
     }
+
 
     /**
      * Test if action bar title initially displays Addons

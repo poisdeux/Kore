@@ -54,6 +54,7 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.xbmc.kore.testhelpers.EspressoTestUtils.clickAdapterViewItem;
+import static org.xbmc.kore.testhelpers.EspressoTestUtils.openNavigationDrawer;
 import static org.xbmc.kore.testhelpers.EspressoTestUtils.rotateDevice;
 import static org.xbmc.kore.testhelpers.EspressoTestUtils.waitForPanelState;
 import static org.xbmc.kore.testhelpers.Matchers.withHighlightState;
@@ -337,7 +338,7 @@ public class SlideUpPanelTests extends AbstractTestClass<MusicActivity> {
         expandPanel();
         onView(withId(R.id.npp_shuffle)).perform(click()); //Set state to shuffled
 
-        rotateDevice(getActivityTestRule().getActivity());
+        rotateDevice(getActivity());
 
         //Using waitForView as we need to wait for the rotate to finish
         onView(isRoot()).perform(ViewActions.waitForView(R.id.npp_shuffle, new ViewActions.CheckStatus() {
@@ -525,7 +526,7 @@ public class SlideUpPanelTests extends AbstractTestClass<MusicActivity> {
         expandPanel();
         onView(withId(R.id.mpi_seek_bar)).perform(ViewActions.slideSeekBar(progress));
 
-        Utils.openDrawer(getActivityTestRule());
+        openNavigationDrawer();
         clickAdapterViewItem(2, R.id.navigation_drawer); //select movie activity
 
         waitForPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
@@ -577,7 +578,7 @@ public class SlideUpPanelTests extends AbstractTestClass<MusicActivity> {
      */
     @Test
     public void disableShowingPanelInPreferences() throws Throwable {
-        Utils.openDrawer(getActivityTestRule());
+        openNavigationDrawer();
         clickAdapterViewItem(10, R.id.navigation_drawer); //Show preference screen
 
         SharedPreferences.Editor edit = PreferenceManager.getDefaultSharedPreferences(getActivity()).edit();
@@ -602,14 +603,14 @@ public class SlideUpPanelTests extends AbstractTestClass<MusicActivity> {
      */
     @Test
     public void showPanelWhenUserEnablesPanel() throws Throwable {
-        Utils.openDrawer(getActivityTestRule());
+        openNavigationDrawer();
         clickAdapterViewItem(10, R.id.navigation_drawer); //Show preference screen
         SharedPreferences.Editor edit = PreferenceManager.getDefaultSharedPreferences(getActivity()).edit();
         edit.putBoolean(Settings.KEY_PREF_SHOW_NOW_PLAYING_PANEL, false);
         edit.apply();
         pressBack();
 
-        Utils.openDrawer(getActivityTestRule());
+        openNavigationDrawer();
         clickAdapterViewItem(10, R.id.navigation_drawer); //Show preference screen
         edit.putBoolean(Settings.KEY_PREF_SHOW_NOW_PLAYING_PANEL, true);
         edit.apply();

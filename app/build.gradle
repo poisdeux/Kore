@@ -9,7 +9,6 @@ def getVersionName = { ->
     return stdout.toString().trim()
 }
 
-
 android {
     compileSdkVersion 26
     buildToolsVersion "26.0.2"
@@ -104,6 +103,10 @@ android {
         exclude 'META-INF/LICENSE.txt'
         exclude 'META-INF/NOTICE.txt'
     }
+
+    testOptions {
+        animationsDisabled true
+    }
 }
 
 ext {
@@ -142,25 +145,23 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 }
 
-// Get the path to ADB.  Required when running tests directly from Android Studio.
-// Source: http://stackoverflow.com/a/26771087/112705
-def adb = android.getAdbExe().toString()
 
-// Source: http://stackoverflow.com/q/29908110/112705
-afterEvaluate {
-    task grantAnimationPermissionDev(type: Exec, dependsOn: 'installInstrumentationTestDebug') {
-        doFirst {
-            println("Executing: $adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.SET_ANIMATION_SCALE")
-            commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.SET_ANIMATION_SCALE".split(' ')
-        }
-    }
+task copyScreenshots(type: Exec) {
+    environment "AVD_SCREENSHOTS_DIR", '/storage/emulated/0/Android/data/org.xbmc.kore.instrumentationtest/cache/screenshots/'
+    commandLine "../tools/jenkins/manage_emulator.sh", "-c", "test"
+}
 
-    // When launching individual tests from Android Studio, it seems that only the assemble tasks
-    // get called directly, not the install* versions
-    tasks.each { task ->
-        if (task.name.startsWith('assembleInstrumentationTestDebugAndroidTest')) {
-            task.dependsOn grantAnimationPermissionDev
-        }
+task installInstrumentationTestDebugApk(type: Exec) {
+    commandLine "adb", "push", "build/outputs/apk/app-instrumentationTest-debug.apk", "/data/local/tmp/org.xbmc.kore.instrumentationtest"
+    commandLine "adb", "shell", "pm", "install", "-r", "/data/local/tmp/org.xbmc.kore.instrumentationtest"
+}
+
+task runInstrumentedTests(type: Exec, dependsOn: installInstrumentationTestDebugApk) {
+    commandLine "../tools/jenkins/run_instrumentation_tests.pl", "-C", "../app/src/androidTest/java/org/xbmc/kore/tests/ui/addons/"
+
+    standardOutput = new ByteArrayOutputStream()
+    ext.output = {
+        return standardOutput.toString()
     }
 }
 
@@ -172,5 +173,9 @@ afterEvaluate {
 tasks.whenTaskAdded { task ->
     if (task.name.contains("compileFullDebugUnitTestSources")) {
         task.dependsOn assembleFullDebug
+    }
+
+    if (task.name.contains("assembleInstrumentationTestDebugAndroidTest")) {
+        installInstrumentationTestDebugApk.dependsOn assembleInstrumentationTestDebugAndroidTest
     }
 }

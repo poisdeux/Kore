@@ -1,0 +1,70 @@
+pipeline {
+  agent { 
+    docker { 
+	image 'poisdeux/kore'
+	args '-u root:root --privileged'
+    }    
+  }
+  stages {
+    stage('build') {
+        steps {
+            sh '''
+               ./gradlew assembleFullRelease
+            '''
+        }
+    }
+    stage('run lint checks') {
+      steps {
+            sh '''
+               ./gradlew lintFullRelease
+            '''
+      }
+    }
+   stage('run local tests') {
+      steps {
+            sh '''
+               ./gradlew testFullDebugUnitTest
+            '''
+      }
+    }
+     stage('run device tests') {
+      steps {
+           timeout(time: 3, unit: 'MINUTES') {
+            sh '''
+                avdmanager -v create avd -f -g google_apis -b x86_64 -d 'Nexus 5' -n test -c 100M -k 'system-images;android-25;google_apis;x86_64'
+                cp tools/jenkins/config.ini ~/.android/avd/test.avd/
+                ./tools/jenkins/manage_emulator.sh -d -r test
+            '''
+            }
+           timeout(time: 3, unit: 'MINUTES') {
+               sh '''./tools/jenkins/start_emulator.sh -d test'''
+           }
+           sh '''
+              ./gradlew connectedInstrumentationTestDebugAndroidTest
+           '''
+      }
+    }
+    stage('Sign APK') {
+     steps {
+           signAndroidApks '**/myApp-unsigned.apk', {
+             keyStoreId 'myApp.keyStore'
+             keyAlias 'myAppKey'
+             // uncomment the following line to output the signed APK to a separate directory as described above
+             // signedApkMapping unsignedApkNameDir()
+             // uncomment the following line to output the signed APK as a sibling of the unsigned APK, as described above, or just omit signedApkMapping
+             // signedApkMapping unsignedApkSibling()
+             archiveSignedApks true
+             archiveUnsignedApks true
+             androidHome '/opt/android-sdk'
+           }
+      }
+    }
+    stage('Publish APK') {
+     steps {
+           sh '''
+              echo hello
+           '''
+      }
+    }
+  }
+}

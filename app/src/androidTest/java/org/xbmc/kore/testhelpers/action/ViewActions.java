@@ -55,10 +55,12 @@ public final class ViewActions {
     }
 
     /**
-     * ViewAction that waits until view with viewId becomes visible
+     * ViewAction that waits until view with viewId becomes visible.
+     * Note that this action needs to be performed on the root view.
      * @param viewId Resource identifier of view item that must be checked
      * @param checkStatus called when viewId has been found to check its status. If return value
-     *                      is true waitForView will stop, false it will continue until timeout is exceeded
+     *                      is true waitForView will stop, false it will call checkStatus again
+     *                      until timeout is exceeded
      * @param millis amount of time to wait for view to become visible
      * @return
      */
