@@ -35,10 +35,12 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.rules.TestWatcher;
+import org.junit.rules.Timeout;
 import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 import org.xbmc.kore.host.HostInfo;
 import org.xbmc.kore.jsonrpc.HostConnection;
+import org.xbmc.kore.testhelpers.FlakyTestsRule;
 import org.xbmc.kore.testhelpers.LoaderIdlingResource;
 import org.xbmc.kore.testhelpers.Utils;
 import org.xbmc.kore.testutils.Database;
@@ -56,6 +58,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Comparator;
 import java.util.Date;
 
 @RunWith(AndroidJUnit4.class)
@@ -91,17 +94,7 @@ abstract public class AbstractTestClass<T extends AppCompatActivity> {
     private HostInfo hostInfo;
 
     @Rule
-    public TestWatcher watchman = new TestWatcher() {
-        @Override
-        protected void failed(Throwable e, Description description) {
-            takeScreenshot(description.getClassName() + "." + description.getMethodName());
-        }
-
-        @Override
-        protected void succeeded(Description description) {
-
-        }
-    };
+    public Timeout globalTimeout = Timeout.seconds(60); // prevent waiting indefinitely on test to finish
 
     @BeforeClass
     public static void setupMockTCPServer() throws Throwable {
@@ -200,47 +193,5 @@ abstract public class AbstractTestClass<T extends AppCompatActivity> {
 
     public static InputHandler getInputHandler() {
         return inputHandler;
-    }
-
-    protected void takeScreenshot(String name) {
-        Date now = new Date();
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd-hhmm");
-
-        try {
-            File path = new File(activity.getExternalCacheDir().getAbsolutePath() +
-                                 "/screenshots/");
-
-            if (!path.exists()) {
-                if (!path.mkdirs()) {
-                    LogUtils.LOGD("AbstractTestClass", "takeScreenshot: unable to create directory: " +path.toString());
-                    return;
-                }
-            }
-
-            if (!path.canWrite()) {
-                LogUtils.LOGD("AbstractTestClass", "takeScreenshot: unable to write to: " +path.toString());
-                return;
-            }
-
-            String filename = name + "-" + dateFormat.format(now) + ".jpg";
-            File imageFile = new File(path, filename);
-
-            LogUtils.LOGD("AbstractTestClass", "takeScreenshot: saving to " + imageFile.toString());
-
-            // create bitmap screen capture
-            View v1 = activity.getWindow().getDecorView().getRootView();
-            v1.setDrawingCacheEnabled(true);
-            Bitmap bitmap = Bitmap.createBitmap(v1.getDrawingCache());
-            v1.setDrawingCacheEnabled(false);
-
-            FileOutputStream outputStream = new FileOutputStream(imageFile);
-            int quality = 100;
-            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
-            outputStream.flush();
-            outputStream.close();
-        } catch (Throwable e) {
-            LogUtils.LOGD("AbstractTestClass", "takeScreenShot: " + e.getMessage());
-            e.printStackTrace();
-        }
     }
 }

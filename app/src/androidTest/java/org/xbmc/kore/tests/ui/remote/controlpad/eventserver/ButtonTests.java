@@ -29,6 +29,7 @@ import org.xbmc.kore.eventclient.ButtonCodes;
 import org.xbmc.kore.host.HostInfo;
 import org.xbmc.kore.host.HostManager;
 import org.xbmc.kore.jsonrpc.method.Input;
+import org.xbmc.kore.testhelpers.FlakyTestsRule;
 import org.xbmc.kore.testhelpers.TestUtils;
 import org.xbmc.kore.testhelpers.Utils;
 import org.xbmc.kore.tests.ui.AbstractTestClass;
@@ -49,8 +50,8 @@ public class ButtonTests extends AbstractTestClass<RemoteActivity> {
     private static MockEventServer mockEventServer;
 
     @Rule
-    public ActivityTestRule<RemoteActivity> remoteActivityActivityTestRule =
-            new ActivityTestRule<>(RemoteActivity.class);
+    public FlakyTestsRule<RemoteActivity> remoteActivityActivityTestRule =
+            new FlakyTestsRule<>(RemoteActivity.class);
 
     @Override
     protected ActivityTestRule<RemoteActivity> getActivityTestRule() {

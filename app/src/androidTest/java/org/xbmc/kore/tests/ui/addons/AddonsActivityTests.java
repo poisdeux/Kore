@@ -25,6 +25,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.xbmc.kore.R;
 import org.xbmc.kore.testhelpers.EspressoTestUtils;
+import org.xbmc.kore.testhelpers.FlakyTestsRule;
 import org.xbmc.kore.tests.ui.AbstractTestClass;
 import org.xbmc.kore.tests.ui.BaseMediaActivityTests;
 import org.xbmc.kore.ui.sections.addon.AddonsActivity;
@@ -67,7 +68,7 @@ public class AddonsActivityTests extends BaseMediaActivityTests<MoviesActivity> 
      * Note: we use MoviesActivity here instead of AddonsActivity. See above comment to know why
      */
     @Rule
-    public ActivityTestRule<MoviesActivity> mActivityRule = new ActivityTestRule<>(
+    public FlakyTestsRule<MoviesActivity> mActivityRule = new FlakyTestsRule<>(
             MoviesActivity.class);
 
     @Override

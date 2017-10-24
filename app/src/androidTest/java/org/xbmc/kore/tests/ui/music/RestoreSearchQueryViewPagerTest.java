@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 import org.xbmc.kore.R;
 import org.xbmc.kore.host.HostInfo;
 import org.xbmc.kore.testhelpers.EspressoTestUtils;
+import org.xbmc.kore.testhelpers.FlakyTestsRule;
 import org.xbmc.kore.testhelpers.LoaderIdlingResource;
 import org.xbmc.kore.tests.ui.AbstractTestClass;
 import org.xbmc.kore.ui.sections.audio.MusicActivity;
@@ -48,7 +49,7 @@ public class RestoreSearchQueryViewPagerTest extends AbstractTestClass<MusicActi
     private final int ALBUM_COMPLETE_LIST_SIZE = 235;
 
     @Rule
-    public ActivityTestRule<MusicActivity> mActivityRule = new ActivityTestRule<>(
+    public FlakyTestsRule<MusicActivity> mActivityRule = new FlakyTestsRule<>(
             MusicActivity.class);
 
     @Override

@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.xbmc.kore.R;
 import org.xbmc.kore.host.HostInfo;
 import org.xbmc.kore.jsonrpc.method.Input;
+import org.xbmc.kore.testhelpers.FlakyTestsRule;
 import org.xbmc.kore.testhelpers.TestUtils;
 import org.xbmc.kore.testhelpers.Utils;
 import org.xbmc.kore.tests.ui.AbstractTestClass;
@@ -35,8 +36,8 @@ import static android.support.test.espresso.matcher.ViewMatchers.withId;
 
 public class KodiPreV17Tests extends AbstractTestClass<RemoteActivity> {
     @Rule
-    public ActivityTestRule<RemoteActivity> remoteActivityActivityTestRule =
-            new ActivityTestRule<>(RemoteActivity.class);
+    public FlakyTestsRule<RemoteActivity> remoteActivityActivityTestRule =
+            new FlakyTestsRule<>(RemoteActivity.class);
 
     @Override
     protected ActivityTestRule<RemoteActivity> getActivityTestRule() {
