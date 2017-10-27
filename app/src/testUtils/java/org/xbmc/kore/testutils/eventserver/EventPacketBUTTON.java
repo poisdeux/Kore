@@ -34,11 +34,16 @@ public class EventPacketBUTTON extends EventPacket {
         super(packet);
 
         byte[] payload = getPayload();
+        if (payload.length < 6) {
+            throw new RuntimeException("Payload too small");
+        }
         code = ByteBuffer.wrap(payload, 0, 2).getShort();
         flags = ByteBuffer.wrap(payload, 2, 2).getShort();
         amount = ByteBuffer.wrap(payload, 4, 2).getShort();
 
         mapName = getStringFromPayload(payload, 6);
+        if (mapName == null)
+            throw new RuntimeException("Could not find a button name in the payload");
 
         int nextStringPosition = 6 + mapName.getBytes().length + 1;
         buttonName = getStringFromPayload(payload, nextStringPosition);

@@ -98,8 +98,6 @@ public class ButtonTests extends AbstractTestClass<RemoteActivity> {
         onView(withId(R.id.right)).perform(click());
 
         testRemoteButton(ButtonCodes.REMOTE_RIGHT);
-
-        fail();
     }
 
     @Test
