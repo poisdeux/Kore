@@ -147,7 +147,7 @@ task mvScreenshots(type: Exec) {
     commandLine "adb", "shell", "rm", "-r", "-f", "/data/data/org.xbmc.kore.instrumentationtest/files/screenshots"
 }
 
-task runInstrumentedTests(type: Exec, dependsOn: installInstrumentationTestDebugApk) {
+task runInstrumentedTests(type: Exec) {
     commandLine "../tools/jenkins/run_instrumentation_tests.pl", "-C", "../app/src/androidTest/java/org/xbmc/kore/tests/ui/addons/"
 
     standardOutput = new ByteArrayOutputStream()
@@ -156,39 +156,27 @@ task runInstrumentedTests(type: Exec, dependsOn: installInstrumentationTestDebug
     }
 }
 
-// Get the path to ADB.  Required when running tests directly from Android Studio.
-// Source: http://stackoverflow.com/a/26771087/112705
-def adb = android.getAdbExe().toString()
-
-// Source: http://stackoverflow.com/q/29908110/112705
-afterEvaluate {
-    task grantAnimationPermissionDev(type: Exec, dependsOn: 'installInstrumentationTestDebug') {
-        doFirst {
-            println("Executing: $adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.SET_ANIMATION_SCALE")
-            commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.SET_ANIMATION_SCALE".split(' ')
-        }
-    }
-
-    // When launching individual tests from Android Studio, it seems that only the assemble tasks
-    // get called directly, not the install* versions
-    tasks.each { task ->
-        if (task.name.startsWith('assembleInstrumentationTestDebugAndroidTest')) {
-            task.dependsOn grantAnimationPermissionDev
-        }
-    }
+task grantAnimationPermissionDev(type: Exec) {
+    def adb = android.getAdbExe().toString()
+    println("Executing: $adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.SET_ANIMATION_SCALE")
+    commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.SET_ANIMATION_SCALE".split(' ')
 }
 
-/**
- * Android gradle plugin 2.3.x contains a bug where the assets for fullDebug
- * are not copied. The task assembleFullDebug does copy the required assets,
- * so this dependency fixes the issue.
- */
 tasks.whenTaskAdded { task ->
+    /**
+     * Android gradle plugin 2.3.x contains a bug where the assets for fullDebug
+     * are not copied. The task assembleFullDebug does copy the required assets,
+     * so this dependency fixes the issue.
+     */
     if (task.name.contains("compileFullDebugUnitTestSources")) {
         task.dependsOn assembleFullDebug
     }
 
-    if (task.name.contains("assembleInstrumentationTestDebugAndroidTest")) {
-        installInstrumentationTestDebugApk.dependsOn assembleInstrumentationTestDebugAndroidTest
+    if (task.name.startsWith('installInstrumentationTestDebugAndroidTest')) {
+        runInstrumentedTests.dependsOn installInstrumentationTestDebugAndroidTest
+    }
+
+    if (task.name.startsWith('assembleInstrumentationTestDebugAndroidTest')) {
+        task.dependsOn grantAnimationPermissionDev
     }
 }
