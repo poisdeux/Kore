@@ -142,9 +142,9 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 }
 
-task copyScreenshots(type: Exec) {
-    environment "AVD_SCREENSHOTS_DIR", '/storage/emulated/0/Android/data/org.xbmc.kore.instrumentationtest/cache/screenshots/'
-    commandLine "../tools/jenkins/manage_emulator.sh", "-c", "test"
+task mvScreenshots(type: Exec) {
+    commandLine "adb", "pull", "/data/data/org.xbmc.kore.instrumentationtest/files/screenshots"
+    commandLine "adb", "shell", "rm", "-r", "-f", "/data/data/org.xbmc.kore.instrumentationtest/files/screenshots"
 }
 
 task installInstrumentationTestDebugApk(type: Exec) {

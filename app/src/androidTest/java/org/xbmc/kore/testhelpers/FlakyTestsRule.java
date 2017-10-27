@@ -105,14 +105,17 @@ public class FlakyTestsRule<T extends Activity> extends ActivityTestRule {
         }
     }
 
+    private File getScreenShotsDir() {
+        return new File(getActivity().getFilesDir().getAbsolutePath() + "/screenshots/");
+    }
+
     /**
      * Removes all screenshots whose filename starts with the given name
      * @param startsWith
      */
     private void removeScreenshots(final String startsWith) {
         try {
-            File path = new File(getActivity().getExternalCacheDir().getAbsolutePath() +
-                                 "/screenshots/");
+            File path = getScreenShotsDir();
             File[] files = path.listFiles(new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {
@@ -138,8 +141,7 @@ public class FlakyTestsRule<T extends Activity> extends ActivityTestRule {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd-hhmm");
 
         try {
-            File path = new File(getActivity().getExternalCacheDir().getAbsolutePath() +
-                                 "/screenshots/");
+            File path = getScreenShotsDir();
 
             if (!path.exists()) {
                 if (!path.mkdirs()) {

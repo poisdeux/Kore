@@ -16,17 +16,14 @@
 
 package org.xbmc.kore.tests.ui;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
 import android.support.test.espresso.Espresso;
 import android.support.test.rule.ActivityTestRule;
 import android.support.test.runner.AndroidJUnit4;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.PreferenceManager;
-import android.view.View;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -34,13 +31,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
-import org.junit.rules.TestWatcher;
-import org.junit.rules.Timeout;
-import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 import org.xbmc.kore.host.HostInfo;
 import org.xbmc.kore.jsonrpc.HostConnection;
-import org.xbmc.kore.testhelpers.FlakyTestsRule;
 import org.xbmc.kore.testhelpers.LoaderIdlingResource;
 import org.xbmc.kore.testhelpers.Utils;
 import org.xbmc.kore.testutils.Database;
@@ -54,12 +47,7 @@ import org.xbmc.kore.testutils.tcpserver.handlers.PlayerHandler;
 import org.xbmc.kore.ui.sections.hosts.HostFragmentManualConfiguration;
 import org.xbmc.kore.utils.LogUtils;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Comparator;
-import java.util.Date;
 
 @RunWith(AndroidJUnit4.class)
 @Ignore
@@ -90,11 +78,7 @@ abstract public class AbstractTestClass<T extends AppCompatActivity> {
     private static ApplicationHandler applicationHandler;
     private static InputHandler inputHandler;
 
-    private Activity activity;
     private HostInfo hostInfo;
-
-    @Rule
-    public Timeout globalTimeout = Timeout.seconds(60); // prevent waiting indefinitely on test to finish
 
     @BeforeClass
     public static void setupMockTCPServer() throws Throwable {
@@ -124,8 +108,6 @@ abstract public class AbstractTestClass<T extends AppCompatActivity> {
         Utils.setLearnedAboutDrawerPreference(context, true);
         //Allow each test to change the shared preferences
         setSharedPreferences(context);
-
-        activity = getActivity();
 
         //Note: as the activity is not yet available in @BeforeClass we need
         //      to add the handler here

@@ -45,6 +45,7 @@ import static android.support.test.espresso.action.ViewActions.click;
 import static android.support.test.espresso.action.ViewActions.longClick;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
 import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.fail;
 
 public class ButtonTests extends AbstractTestClass<RemoteActivity> {
     private static MockEventServer mockEventServer;
@@ -97,6 +98,8 @@ public class ButtonTests extends AbstractTestClass<RemoteActivity> {
         onView(withId(R.id.right)).perform(click());
 
         testRemoteButton(ButtonCodes.REMOTE_RIGHT);
+
+        fail();
     }
 
     @Test
