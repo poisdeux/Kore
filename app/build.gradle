@@ -147,16 +147,6 @@ task mvScreenshots(type: Exec) {
     commandLine "adb", "shell", "rm", "-r", "-f", "/data/data/org.xbmc.kore.instrumentationtest/files/screenshots"
 }
 
-task installInstrumentationTestDebugApk(type: Exec) {
-    commandLine "adb", "push", "build/outputs/apk/app-instrumentationTest-debug.apk", "/data/local/tmp/org.xbmc.kore.instrumentationtest"
-    commandLine "adb", "shell", "pm", "install", "-r", "/data/local/tmp/org.xbmc.kore.instrumentationtest"
-
-    standardOutput = new ByteArrayOutputStream()
-    ext.output = {
-        return standardOutput.toString()
-    }
-}
-
 task runInstrumentedTests(type: Exec, dependsOn: installInstrumentationTestDebugApk) {
     commandLine "../tools/jenkins/run_instrumentation_tests.pl", "-C", "../app/src/androidTest/java/org/xbmc/kore/tests/ui/addons/"
 
