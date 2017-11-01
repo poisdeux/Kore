@@ -33,7 +33,6 @@ import org.junit.Test;
 import org.xbmc.kore.R;
 import org.xbmc.kore.Settings;
 import org.xbmc.kore.host.HostInfo;
-import org.xbmc.kore.testhelpers.FlakyTestsRule;
 import org.xbmc.kore.testhelpers.action.ViewActions;
 import org.xbmc.kore.tests.ui.AbstractTestClass;
 import org.xbmc.kore.testutils.tcpserver.handlers.PlayerHandler;
@@ -63,11 +62,11 @@ import static org.xbmc.kore.testhelpers.Matchers.withProgress;
 public class SlideUpPanelTests extends AbstractTestClass<MusicActivity> {
 
     @Rule
-    public FlakyTestsRule<MusicActivity> musicActivityActivityTestRule =
-            new FlakyTestsRule<>(MusicActivity.class);
+    public ActivityTestRule<MusicActivity> musicActivityActivityTestRule =
+            new ActivityTestRule<>(MusicActivity.class);
 
     @Override
-    protected ActivityTestRule<MusicActivity> getActivityTestRule() {
+    protected android.support.test.rule.ActivityTestRule getActivityTestRule() {
         return musicActivityActivityTestRule;
     }
 

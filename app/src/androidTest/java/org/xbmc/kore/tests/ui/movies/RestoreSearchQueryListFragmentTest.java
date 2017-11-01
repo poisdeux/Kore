@@ -28,7 +28,6 @@ import org.junit.runner.RunWith;
 import org.xbmc.kore.R;
 import org.xbmc.kore.host.HostInfo;
 import org.xbmc.kore.testhelpers.EspressoTestUtils;
-import org.xbmc.kore.testhelpers.FlakyTestsRule;
 import org.xbmc.kore.tests.ui.AbstractTestClass;
 import org.xbmc.kore.ui.sections.video.MoviesActivity;
 
@@ -41,11 +40,11 @@ public class RestoreSearchQueryListFragmentTest extends AbstractTestClass<Movies
     private final int COMPLETE_LIST_SIZE = 300;
 
     @Rule
-    public FlakyTestsRule<MoviesActivity> mActivityRule = new FlakyTestsRule<>(
+    public ActivityTestRule<MoviesActivity> mActivityRule = new ActivityTestRule<>(
             MoviesActivity.class);
 
     @Override
-    protected ActivityTestRule<MoviesActivity> getActivityTestRule() {
+    protected android.support.test.rule.ActivityTestRule getActivityTestRule() {
         return mActivityRule;
     }
 

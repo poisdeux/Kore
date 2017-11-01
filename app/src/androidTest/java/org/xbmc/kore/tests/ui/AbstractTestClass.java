@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 import org.xbmc.kore.host.HostInfo;
 import org.xbmc.kore.jsonrpc.HostConnection;
 import org.xbmc.kore.testhelpers.LoaderIdlingResource;
+import org.xbmc.kore.testhelpers.TakeScreenshotRule;
 import org.xbmc.kore.testhelpers.Utils;
 import org.xbmc.kore.testutils.Database;
 import org.xbmc.kore.testutils.tcpserver.MockTcpServer;
@@ -79,6 +80,9 @@ abstract public class AbstractTestClass<T extends AppCompatActivity> {
     private static InputHandler inputHandler;
 
     private HostInfo hostInfo;
+
+    @Rule
+    public TakeScreenshotRule takeScreenshotRule = new TakeScreenshotRule();
 
     @BeforeClass
     public static void setupMockTCPServer() throws Throwable {

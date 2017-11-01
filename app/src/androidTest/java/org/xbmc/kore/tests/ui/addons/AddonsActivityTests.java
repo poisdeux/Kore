@@ -25,7 +25,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.xbmc.kore.R;
 import org.xbmc.kore.testhelpers.EspressoTestUtils;
-import org.xbmc.kore.testhelpers.FlakyTestsRule;
 import org.xbmc.kore.tests.ui.AbstractTestClass;
 import org.xbmc.kore.tests.ui.BaseMediaActivityTests;
 import org.xbmc.kore.ui.sections.addon.AddonsActivity;
@@ -36,6 +35,7 @@ import static android.support.test.espresso.assertion.ViewAssertions.matches;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
 import static android.support.test.espresso.matcher.ViewMatchers.withParent;
 import static android.support.test.espresso.matcher.ViewMatchers.withText;
+import static junit.framework.Assert.fail;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.xbmc.kore.testhelpers.EspressoTestUtils.selectListItemPressBackAndCheckActionbarTitle;
@@ -68,11 +68,11 @@ public class AddonsActivityTests extends BaseMediaActivityTests<MoviesActivity> 
      * Note: we use MoviesActivity here instead of AddonsActivity. See above comment to know why
      */
     @Rule
-    public FlakyTestsRule<MoviesActivity> mActivityRule = new FlakyTestsRule<>(
+    public ActivityTestRule<MoviesActivity> mActivityRule = new ActivityTestRule<>(
             MoviesActivity.class);
 
     @Override
-    protected ActivityTestRule<MoviesActivity> getActivityTestRule() {
+    protected android.support.test.rule.ActivityTestRule getActivityTestRule() {
         return mActivityRule;
     }
 
@@ -93,6 +93,7 @@ public class AddonsActivityTests extends BaseMediaActivityTests<MoviesActivity> 
     public void setActionBarTitleMain() {
         onView(allOf(instanceOf(TextView.class), withParent(withId(R.id.default_toolbar))))
                 .check(matches(withText(R.string.addons)));
+        fail();
     }
 
     /**

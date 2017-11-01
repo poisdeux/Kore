@@ -23,7 +23,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.xbmc.kore.R;
 import org.xbmc.kore.testhelpers.EspressoTestUtils;
-import org.xbmc.kore.testhelpers.FlakyTestsRule;
 import org.xbmc.kore.tests.ui.BaseMediaActivityTests;
 import org.xbmc.kore.ui.sections.video.TVShowsActivity;
 
@@ -40,11 +39,11 @@ import static org.hamcrest.Matchers.instanceOf;
 public class TVShowsActivityTests extends BaseMediaActivityTests<TVShowsActivity> {
 
     @Rule
-    public FlakyTestsRule<TVShowsActivity> mActivityRule = new FlakyTestsRule<>(
+    public ActivityTestRule<TVShowsActivity> mActivityRule = new ActivityTestRule<>(
             TVShowsActivity.class);
 
     @Override
-    protected ActivityTestRule<TVShowsActivity> getActivityTestRule() {
+    protected android.support.test.rule.ActivityTestRule getActivityTestRule() {
         return mActivityRule;
     }
 

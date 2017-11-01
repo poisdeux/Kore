@@ -23,7 +23,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.xbmc.kore.R;
 import org.xbmc.kore.testhelpers.EspressoTestUtils;
-import org.xbmc.kore.testhelpers.FlakyTestsRule;
 import org.xbmc.kore.tests.ui.BaseMediaActivityTests;
 import org.xbmc.kore.ui.sections.audio.MusicActivity;
 
@@ -44,11 +43,11 @@ import static org.xbmc.kore.testhelpers.EspressoTestUtils.selectListItemRotateDe
 public class MusicActivityTests extends BaseMediaActivityTests<MusicActivity> {
 
     @Rule
-    public FlakyTestsRule<MusicActivity> musicActivityActivityTestRule =
-            new FlakyTestsRule<>(MusicActivity.class);
+    public ActivityTestRule<MusicActivity> musicActivityActivityTestRule =
+            new ActivityTestRule<>(MusicActivity.class);
 
     @Override
-    protected ActivityTestRule<MusicActivity> getActivityTestRule() {
+    protected android.support.test.rule.ActivityTestRule getActivityTestRule() {
         return musicActivityActivityTestRule;
     }
 

@@ -148,17 +148,19 @@ task mvScreenshots(type: Exec) {
 }
 
 /**
- * Setting the animation permission will fail if Kore hasn't been installed previously
+ * These permissions are required when running the android instrumented tests.
+ *
+ * Setting the permissions will fail if Kore hasn't been installed previously
  * as the package manager doesn't know about our App yet. Make sure you have installed
  * Kore before running this task.
  */
-task grantAnimationPermissionDev(type: Exec) {
+task grantPermissionsDev(type: Exec) {
     def adb = android.getAdbExecutable().toString()
-
-    commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.SET_ANIMATION_SCALE".split(' ')
+    def perms = "android.permission.SET_ANIMATION_SCALE android.permission.WRITE_EXTERNAL_STORAGE"
+    commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId $perms".split(' ')
 }
 
-task runInstrumentedTests(type: Exec, dependsOn: grantAnimationPermissionDev) {
+task runInstrumentedTests(type: Exec, dependsOn: grantPermissionsDev) {
     standardOutput = new ByteArrayOutputStream()
     ext.output = {
         return standardOutput.toString()
@@ -178,7 +180,7 @@ tasks.whenTaskAdded { task ->
     }
 
     if (task.name.startsWith('installInstrumentationTestDebug')) {
-        grantAnimationPermissionDev.dependsOn installInstrumentationTestDebug
+        grantPermissionsDev.dependsOn installInstrumentationTestDebug
     }
 
     if (task.name.startsWith('installInstrumentationTestDebugAndroidTest')) {

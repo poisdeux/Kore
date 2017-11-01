@@ -28,7 +28,6 @@ import org.xbmc.kore.R;
 import org.xbmc.kore.host.HostInfo;
 import org.xbmc.kore.host.HostManager;
 import org.xbmc.kore.jsonrpc.method.Input;
-import org.xbmc.kore.testhelpers.FlakyTestsRule;
 import org.xbmc.kore.testhelpers.Utils;
 import org.xbmc.kore.tests.ui.AbstractTestClass;
 import org.xbmc.kore.testutils.eventserver.MockEventServer;
@@ -45,11 +44,11 @@ public class KodiPreV17Tests extends AbstractTestClass<RemoteActivity> {
     private static MockEventServer mockEventServer;
 
     @Rule
-    public FlakyTestsRule<RemoteActivity> remoteActivityActivityTestRule =
-            new FlakyTestsRule<>(RemoteActivity.class);
+    public ActivityTestRule<RemoteActivity> remoteActivityActivityTestRule =
+            new ActivityTestRule<>(RemoteActivity.class);
 
     @Override
-    protected ActivityTestRule<RemoteActivity> getActivityTestRule() {
+    protected android.support.test.rule.ActivityTestRule getActivityTestRule() {
         return remoteActivityActivityTestRule;
     }
 
