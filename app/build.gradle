@@ -156,6 +156,15 @@ task runInstrumentedTests(type: Exec) {
     }
 }
 
+/**
+ * Setting the animation permission will fail if Kore hasn't been installed previously
+ * as the package manager doesn't know about our App yet. Therefore, if a new test device is
+ * used expect the first test run to fail.
+ * To set the permission correctly run gradle as follows on a new device:
+ *
+ * ./gradlew installInstrumentationTestDebug grantAnimationPermissionDev
+ *
+ */
 task grantAnimationPermissionDev(type: Exec) {
     def adb = android.getAdbExe().toString()
     println("Executing: $adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.SET_ANIMATION_SCALE")
@@ -174,9 +183,5 @@ tasks.whenTaskAdded { task ->
 
     if (task.name.startsWith('installInstrumentationTestDebugAndroidTest')) {
         runInstrumentedTests.dependsOn installInstrumentationTestDebugAndroidTest
-    }
-
-    if (task.name.startsWith('assembleInstrumentationTestDebugAndroidTest')) {
-        task.dependsOn grantAnimationPermissionDev
     }
 }
