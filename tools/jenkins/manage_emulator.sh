@@ -76,7 +76,7 @@ function start_device {
 }
 
 export PATH=/bin/:/usr/bin:${ANDROID_HOME}/tools/bin:${ANDROID_HOME}/platform-tools
-EMULATOR_OPTS=""
+EMULATOR_OPTS="-no-boot-anim"
 POWEROFF_DEVICE=0
 START_DEVICE=0
 
@@ -84,7 +84,7 @@ while getopts ":dpsl" opt
 do
     case $opt in
         d)
-            EMULATOR_OPTS="-no-window -no-audio"
+            EMULATOR_OPTS="${EMULATOR_OPTS} -no-window -no-audio"
             START_DEVICE=1
         ;;
         p)
