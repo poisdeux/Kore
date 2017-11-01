@@ -147,28 +147,24 @@ task mvScreenshots(type: Exec) {
     commandLine "adb", "shell", "rm", "-r", "-f", "/data/data/org.xbmc.kore.instrumentationtest/files/screenshots"
 }
 
-task runInstrumentedTests(type: Exec) {
-    commandLine "../tools/jenkins/run_instrumentation_tests.pl", "-C", "../app/src/androidTest/java/org/xbmc/kore/tests/ui/addons/"
+/**
+ * Setting the animation permission will fail if Kore hasn't been installed previously
+ * as the package manager doesn't know about our App yet. Make sure you have installed
+ * Kore before running this task.
+ */
+task grantAnimationPermissionDev(type: Exec) {
+    def adb = android.getAdbExecutable().toString()
 
+    commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.SET_ANIMATION_SCALE".split(' ')
+}
+
+task runInstrumentedTests(type: Exec, dependsOn: grantAnimationPermissionDev) {
     standardOutput = new ByteArrayOutputStream()
     ext.output = {
         return standardOutput.toString()
     }
-}
 
-/**
- * Setting the animation permission will fail if Kore hasn't been installed previously
- * as the package manager doesn't know about our App yet. Therefore, if a new test device is
- * used expect the first test run to fail.
- * To set the permission correctly run gradle as follows on a new device:
- *
- * ./gradlew installInstrumentationTestDebug grantAnimationPermissionDev
- *
- */
-task grantAnimationPermissionDev(type: Exec) {
-    def adb = android.getAdbExe().toString()
-    println("Executing: $adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.SET_ANIMATION_SCALE")
-    commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.SET_ANIMATION_SCALE".split(' ')
+    commandLine "../tools/jenkins/run_instrumentation_tests.pl", "-C", "../app/src/androidTest/java/org/xbmc/kore/tests/ui/addons/"
 }
 
 tasks.whenTaskAdded { task ->
@@ -179,6 +175,10 @@ tasks.whenTaskAdded { task ->
      */
     if (task.name.contains("compileFullDebugUnitTestSources")) {
         task.dependsOn assembleFullDebug
+    }
+
+    if (task.name.startsWith('installInstrumentationTestDebug')) {
+        grantAnimationPermissionDev.dependsOn installInstrumentationTestDebug
     }
 
     if (task.name.startsWith('installInstrumentationTestDebugAndroidTest')) {
