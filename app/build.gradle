@@ -1,3 +1,5 @@
+import java.text.SimpleDateFormat
+
 apply plugin: 'com.android.application'
 
 def getVersionName = { ->
@@ -142,31 +144,53 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 }
 
-task mvScreenshots(type: Exec) {
-    commandLine "adb", "pull", "/data/data/org.xbmc.kore.instrumentationtest/files/screenshots"
-    commandLine "adb", "shell", "rm", "-r", "-f", "/data/data/org.xbmc.kore.instrumentationtest/files/screenshots"
+def adb = android.getAdbExecutable().toString()
+
+task grantAnimationPermissionDev(type: Exec, dependsOn: 'installInstrumentationTestDebug') {
+    doFirst {
+        commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.SET_ANIMATION_SCALE".split(' ')
+    }
 }
 
-/**
- * These permissions are required when running the android instrumented tests.
- *
- * Setting the permissions will fail if Kore hasn't been installed previously
- * as the package manager doesn't know about our App yet. Make sure you have installed
- * Kore before running this task.
- */
-task grantPermissionsDev(type: Exec) {
-    def adb = android.getAdbExecutable().toString()
-    def perms = "android.permission.SET_ANIMATION_SCALE android.permission.WRITE_EXTERNAL_STORAGE"
-    commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId $perms".split(' ')
-}
-
-task runInstrumentedTests(type: Exec, dependsOn: grantPermissionsDev) {
-    standardOutput = new ByteArrayOutputStream()
-    ext.output = {
-        return standardOutput.toString()
+task runInstrumentedTests(type: Exec, dependsOn: grantAnimationPermissionDev) {
+    def logOutputReader
+    def process
+    doFirst {
+        def builder = new ProcessBuilder("$adb logcat -v raw -s TakeScreenshotRule:D".split())
+        process = builder.start()
+        logOutputReader = new BufferedReader(new InputStreamReader(process.getInputStream()))
     }
 
-    commandLine "../tools/jenkins/run_instrumentation_tests.pl", "-C", "../app/src/androidTest/java/org/xbmc/kore/tests/ui/addons/"
+    commandLine "$adb shell am instrument -w org.xbmc.kore.instrumentationtest.test/android.support.test.runner.AndroidJUnitRunner".split()
+
+    doLast {
+        def logOutputSize = process.getInputStream().available()
+        def logOutput = new char[logOutputSize]
+        logOutputReader.read(logOutput, 0, logOutputSize)
+
+        def matchScreenshotDir = (logOutput =~ /(?m)^takeScreenshot: saving to (.+)$/)
+        if (matchScreenshotDir.find()) {
+            def screenshotsDir = matchScreenshotDir[0][1]
+
+            println "screenshotsDir $screenshotsDir"
+
+            def dateFormat = new SimpleDateFormat("yyyyMMdd-hhmm");
+            def saveLocation = "build/tests/" + dateFormat.format(new Date())
+            def file = new File(saveLocation)
+
+            exec {
+                file.mkdirs()
+                println "Saving screenshots from $screenshotsDir to $saveLocation"
+                commandLine "$adb pull $screenshotsDir ../$saveLocation".split(' ')
+            }
+
+            exec {
+                commandLine "$adb shell rm -rf $screenshotsDir".split()
+            }
+        }
+
+        process.destroy()
+    }
 }
 
 tasks.whenTaskAdded { task ->
@@ -179,11 +203,7 @@ tasks.whenTaskAdded { task ->
         task.dependsOn assembleFullDebug
     }
 
-    if (task.name.startsWith('installInstrumentationTestDebug')) {
-        grantPermissionsDev.dependsOn installInstrumentationTestDebug
-    }
-
-    if (task.name.startsWith('installInstrumentationTestDebugAndroidTest')) {
+    if (task.name.contains("installInstrumentationTestDebugAndroidTest")) {
         runInstrumentedTests.dependsOn installInstrumentationTestDebugAndroidTest
     }
 }

@@ -17,12 +17,8 @@
 package org.xbmc.kore.testhelpers;
 
 
-import android.Manifest;
-import android.app.Activity;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Environment;
-import android.support.v4.app.ActivityCompat;
 import android.view.View;
 
 import org.junit.rules.TestRule;
@@ -71,18 +67,18 @@ public class TakeScreenshotRule implements TestRule {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd-hhmm");
 
         try {
-            File screenshotsDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath().toString() +
+            File screenshotsDir = new File(getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES).getAbsolutePath().toString() +
                                            "/screenshots/");
 
             if (!screenshotsDir.exists()) {
                 if (!screenshotsDir.mkdirs()) {
-                    LogUtils.LOGD(TAG, "takeScreenshot: unable to create directory: " +screenshotsDir.toString());
+                    LogUtils.LOGD(TAG, "ERROR: takeScreenshot: unable to create directory: " +screenshotsDir.toString());
                     return;
                 }
             }
 
             if (!screenshotsDir.canWrite()) {
-                LogUtils.LOGD(TAG, "takeScreenshot: unable to write to: " +screenshotsDir.toString());
+                LogUtils.LOGD(TAG, "ERROR: takeScreenshot: unable to write to: " +screenshotsDir.toString());
                 return;
             }
 
@@ -103,7 +99,7 @@ public class TakeScreenshotRule implements TestRule {
             outputStream.flush();
             outputStream.close();
         } catch (Throwable e) {
-            LogUtils.LOGD(TAG, "takeScreenShot: " + e.getMessage());
+            LogUtils.LOGD(TAG, "ERROR: takeScreenShot: " + e.getMessage());
             e.printStackTrace();
         }
     }
