@@ -9,7 +9,7 @@ pipeline {
     stage('build') {
         steps {
             sh '''
-               ./gradlew assembleFullRelease
+                ./gradlew clean assembleFullRelease
             '''
         }
     }
