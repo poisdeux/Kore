@@ -37,6 +37,12 @@ android {
                 keyPassword keyProps["pass"]
             }
         }
+
+        debug {
+            //Make sure each debug build uses the same signing key to prevent conflicts when
+            //installing different builds on the same device
+            storeFile file('../debug.keystore')
+        }
     }
 
     sourceSets {
@@ -71,7 +77,6 @@ android {
 //            minifyEnabled true
 //            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
 //        }
-
         release {
             if (keystoreFile.exists()) {
                 signingConfig signingConfigs.release
