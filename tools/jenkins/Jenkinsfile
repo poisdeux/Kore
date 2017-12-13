@@ -31,38 +31,21 @@ pipeline {
       steps {
            timeout(time: 3, unit: 'MINUTES') {
             sh '''
-                avdmanager -v create avd -f -g google_apis -b x86_64 -d 'Nexus 5' -n test -c 100M -k 'system-images;android-25;google_apis;x86_64'
+                avdmanager -v create avd -f -g google_apis -b x86 -d 'Nexus 5' -n test -c 100M -k 'system-images;android-26;google_apis;x86'
                 cp tools/jenkins/config.ini ~/.android/avd/test.avd/
             '''
             }
-           timeout(time: 3, unit: 'MINUTES') {
-               sh '''./tools/jenkins/start_emulator.sh -d test'''
+           timeout(time: 10, unit: 'MINUTES') {
+            sh '''
+                ./tools/jenkins/manage_emulator.sh -d test
+            '''
            }
            sh '''
               ./gradlew runInstrumentedTests
            '''
-      }
-    }
-    stage('Sign APK') {
-     steps {
-           signAndroidApks '**/myApp-unsigned.apk', {
-             keyStoreId 'myApp.keyStore'
-             keyAlias 'myAppKey'
-             // uncomment the following line to output the signed APK to a separate directory as described above
-             // signedApkMapping unsignedApkNameDir()
-             // uncomment the following line to output the signed APK as a sibling of the unsigned APK, as described above, or just omit signedApkMapping
-             // signedApkMapping unsignedApkSibling()
-             archiveSignedApks true
-             archiveUnsignedApks true
-             androidHome '/opt/android-sdk'
+           timeout(time: 10, unit: 'MINUTES') {
+               sh '''./tools/jenkins/manage_emulator.sh -p test'''
            }
-      }
-    }
-    stage('Publish APK') {
-     steps {
-           sh '''
-              echo hello
-           '''
       }
     }
   }
