@@ -20,14 +20,14 @@ pipeline {
             '''
       }
     }
-   stage('run local tests') {
+    stage('run local tests') {
       steps {
             sh '''
                ./gradlew testFullDebugUnitTest
             '''
       }
     }
-     stage('run device tests') {
+    stage('run device tests') {
       steps {
            timeout(time: 3, unit: 'MINUTES') {
             sh '''
