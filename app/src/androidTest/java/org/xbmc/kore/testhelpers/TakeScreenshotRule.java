@@ -67,7 +67,7 @@ public class TakeScreenshotRule implements TestRule {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd-hhmm");
 
         try {
-            File screenshotsDir = new File(getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES).getAbsolutePath().toString() +
+            File screenshotsDir = new File(getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES).getAbsolutePath() +
                                            "/screenshots/");
 
             if (!screenshotsDir.exists()) {

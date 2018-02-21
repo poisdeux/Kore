@@ -166,7 +166,9 @@ task runInstrumentedTests(type: Exec, dependsOn: grantAnimationPermissionDev) {
         logOutputReader = new BufferedReader(new InputStreamReader(process.getInputStream()))
     }
 
-    commandLine "$adb shell am instrument -w org.xbmc.kore.instrumentationtest.test/android.support.test.runner.AndroidJUnitRunner".split()
+    commandLine """$adb shell am instrument -e package org.xbmc.kore.tests.ui.addons
+                                -w org.xbmc.kore.instrumentationtest.test/android.support.test.runner.AndroidJUnitRunner
+                """.split()
 
     doLast {
         def logOutputSize = process.getInputStream().available()
