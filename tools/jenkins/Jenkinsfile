@@ -50,4 +50,9 @@ pipeline {
       }
     }
   }
+  post {
+    always {
+        junit './app/build/outputs/androidTest-results/**/*'
+    }
+  }
 }

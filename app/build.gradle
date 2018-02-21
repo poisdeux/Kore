@@ -157,37 +157,44 @@ task grantAnimationPermissionDev(type: Exec, dependsOn: 'installInstrumentationT
     }
 }
 
-task runInstrumentedTests(type: Exec, dependsOn: grantAnimationPermissionDev) {
-    def logOutputReader
-    def process
+def logOutputReader
+def process
+task startLogOutputReader {
     doFirst {
         def builder = new ProcessBuilder("$adb logcat -v raw -s TakeScreenshotRule:D".split())
         process = builder.start()
         logOutputReader = new BufferedReader(new InputStreamReader(process.getInputStream()))
     }
+}
 
-    commandLine """$adb shell am instrument -e package org.xbmc.kore.tests.ui.addons
-                                -w org.xbmc.kore.instrumentationtest.test/android.support.test.runner.AndroidJUnitRunner
-                """.split()
-
-    doLast {
+def screenshotsDirFile
+def screenshotsDir
+def saveLocation
+task parseLogOutputReader(dependsOn: startLogOutputReader) {
+    doFirst {
         def logOutputSize = process.getInputStream().available()
         def logOutput = new char[logOutputSize]
         logOutputReader.read(logOutput, 0, logOutputSize)
 
         def matchScreenshotDir = (logOutput =~ /(?m)^takeScreenshot: saving to (.+)$/)
         if (matchScreenshotDir.find()) {
-            def screenshotsDir = matchScreenshotDir[0][1]
+            screenshotsDir = matchScreenshotDir[0][1]
 
             println "screenshotsDir $screenshotsDir"
 
             def dateFormat = new SimpleDateFormat("yyyyMMdd-hhmm");
-            def saveLocation = "build/tests/" + dateFormat.format(new Date())
-            def file = new File(saveLocation)
+            saveLocation = "build/tests/" + dateFormat.format(new Date())
+            screenshotsDirFile = new File(saveLocation)
+        }
+    }
+}
 
+task copyScreenshots(dependsOn: parseLogOutputReader) {
+    doLast {
+        if (screenshotsDirFile != null) {
+            screenshotsDirFile.mkdirs()
+            println "Saving screenshots from $screenshotsDir to $saveLocation"
             exec {
-                file.mkdirs()
-                println "Saving screenshots from $screenshotsDir to $saveLocation"
                 commandLine "$adb pull $screenshotsDir ../$saveLocation".split(' ')
             }
 
@@ -195,7 +202,6 @@ task runInstrumentedTests(type: Exec, dependsOn: grantAnimationPermissionDev) {
                 commandLine "$adb shell rm -rf $screenshotsDir".split()
             }
         }
-
         process.destroy()
     }
 }
@@ -210,7 +216,9 @@ tasks.whenTaskAdded { task ->
         task.dependsOn assembleFullDebug
     }
 
-    if (task.name.contains("installInstrumentationTestDebugAndroidTest")) {
-        runInstrumentedTests.dependsOn installInstrumentationTestDebugAndroidTest
+    if (task.name.contains("connectedInstrumentationTestDebugAndroidTest")) {
+        connectedInstrumentationTestDebugAndroidTest.dependsOn startLogOutputReader
+        connectedInstrumentationTestDebugAndroidTest.dependsOn grantAnimationPermissionDev
+        connectedInstrumentationTestDebugAndroidTest.finalizedBy copyScreenshots
     }
 }
