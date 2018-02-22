@@ -17,8 +17,13 @@
 package org.xbmc.kore.testhelpers;
 
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Environment;
+import android.support.test.InstrumentationRegistry;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.view.View;
 
 import org.junit.rules.TestRule;
@@ -93,7 +98,7 @@ public class TakeScreenshotRule implements TestRule {
 
     private File createScreenshotsDir() throws Throwable {
         File screenshotsDir = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES), "");
+                Environment.DIRECTORY_PICTURES), "screenshots");
 
         if (!screenshotsDir.exists()) {
             if (!screenshotsDir.mkdirs()) {

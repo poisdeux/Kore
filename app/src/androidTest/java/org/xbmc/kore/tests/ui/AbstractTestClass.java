@@ -16,11 +16,13 @@
 
 package org.xbmc.kore.tests.ui;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.support.test.espresso.Espresso;
+import android.support.test.espresso.IdlingRegistry;
 import android.support.test.rule.ActivityTestRule;
+import android.support.test.rule.GrantPermissionRule;
 import android.support.test.runner.AndroidJUnit4;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.PreferenceManager;
@@ -82,6 +84,12 @@ abstract public class AbstractTestClass<T extends AppCompatActivity> {
     private HostInfo hostInfo;
 
     @Rule
+    public GrantPermissionRule mRuntimePermissionRule = GrantPermissionRule.grant(
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.SET_ANIMATION_SCALE);
+
+    @Rule
     public TakeScreenshotRule takeScreenshotRule = new TakeScreenshotRule();
 
     @BeforeClass
@@ -130,7 +138,7 @@ abstract public class AbstractTestClass<T extends AppCompatActivity> {
         configureHostInfo(hostInfo);
 
         loaderIdlingResource = new LoaderIdlingResource(activityTestRule.getActivity().getSupportLoaderManager());
-        Espresso.registerIdlingResources(loaderIdlingResource);
+        IdlingRegistry.getInstance().register(loaderIdlingResource);
 
         Utils.disableAnimations(context);
 
@@ -147,7 +155,7 @@ abstract public class AbstractTestClass<T extends AppCompatActivity> {
     @After
     public void tearDown() throws Exception {
         if ( loaderIdlingResource != null )
-            Espresso.unregisterIdlingResources(loaderIdlingResource);
+            IdlingRegistry.getInstance().unregister(loaderIdlingResource);
 
         applicationHandler.reset();
         playerHandler.reset();
