@@ -7,7 +7,6 @@ pipeline {
   }
   stages {
     stage('build') {
-        git branch: 'jenkins', changelog: false, poll: false, url: 'https://github.com/poisdeux/Kore.git'
         steps {
             sh '''
                 ./gradlew clean assembleFullRelease
@@ -42,7 +41,7 @@ pipeline {
             '''
            }
            sh '''
-              ./gradlew runInstrumentedTests
+              ./gradlew connectedInstrumentationTestDebugAndroidTest
            '''
            timeout(time: 10, unit: 'MINUTES') {
                sh '''./tools/jenkins/manage_emulator.sh -p test'''
@@ -52,7 +51,7 @@ pipeline {
   }
   post {
     always {
-        junit './app/build/outputs/androidTest-results/**/*'
+        junit './app/build/outputs/androidTest-results/**/*.xml'
     }
   }
 }
