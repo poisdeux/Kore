@@ -67,25 +67,12 @@ public class TakeScreenshotRule implements TestRule {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd-hhmm");
 
         try {
-            File screenshotsDir = new File(getActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES).getAbsolutePath() +
-                                           "/screenshots/");
-
-            if (!screenshotsDir.exists()) {
-                if (!screenshotsDir.mkdirs()) {
-                    LogUtils.LOGD(TAG, "ERROR: takeScreenshot: unable to create directory: " +screenshotsDir.toString());
-                    return;
-                }
-            }
-
-            if (!screenshotsDir.canWrite()) {
-                LogUtils.LOGD(TAG, "ERROR: takeScreenshot: unable to write to: " +screenshotsDir.toString());
-                return;
-            }
+            File screenshotsDir = createScreenshotsDir();
 
             String filename = name + "-" + dateFormat.format(now) + ".jpg";
             File imageFile = new File(screenshotsDir, filename);
 
-            LogUtils.LOGD(TAG, "takeScreenshot: saving to " + screenshotsDir.toString());
+            LogUtils.LOGI(TAG, "takeScreenshot: saving to " + screenshotsDir.toString());
 
             // create bitmap screen capture
             View v1 = getActivity().getWindow().getDecorView().getRootView();
@@ -99,8 +86,25 @@ public class TakeScreenshotRule implements TestRule {
             outputStream.flush();
             outputStream.close();
         } catch (Throwable e) {
-            LogUtils.LOGD(TAG, "ERROR: takeScreenShot: " + e.getMessage());
+            LogUtils.LOGE(TAG, "ERROR: takeScreenShot: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    private File createScreenshotsDir() throws Throwable {
+        File screenshotsDir = new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES), "");
+
+        if (!screenshotsDir.exists()) {
+            if (!screenshotsDir.mkdirs()) {
+                throw new Exception("unable to create directory: " + screenshotsDir);
+            }
+        }
+
+        if (!screenshotsDir.canWrite()) {
+            throw new Exception("unable to write to: " + screenshotsDir);
+        }
+
+        return screenshotsDir;
     }
 }
