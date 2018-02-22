@@ -52,6 +52,7 @@ pipeline {
   post {
     always {
         junit './app/build/outputs/androidTest-results/**/*.xml'
+        androidLint canComputeNew: false, defaultEncoding: '', healthy: '', pattern: './app/build/reports/lint-results*.xml', unHealthy: ''
     }
   }
 }
