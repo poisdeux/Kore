@@ -16,6 +16,7 @@
 
 package org.xbmc.kore.tests.ui.music;
 
+import android.os.SystemClock;
 import android.support.test.rule.ActivityTestRule;
 import android.widget.TextView;
 
@@ -36,6 +37,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.xbmc.kore.testhelpers.EspressoTestUtils.clickAlbumsTab;
 import static org.xbmc.kore.testhelpers.EspressoTestUtils.clickGenresTab;
 import static org.xbmc.kore.testhelpers.EspressoTestUtils.clickMusicVideosTab;
+import static org.xbmc.kore.testhelpers.EspressoTestUtils.rotateDevice;
 import static org.xbmc.kore.testhelpers.EspressoTestUtils.selectListItemAndCheckActionbarTitle;
 import static org.xbmc.kore.testhelpers.EspressoTestUtils.selectListItemPressBackAndCheckActionbarTitle;
 import static org.xbmc.kore.testhelpers.EspressoTestUtils.selectListItemRotateDeviceAndCheckActionbarTitle;
@@ -49,6 +51,14 @@ public class MusicActivityTests extends BaseMediaActivityTests<MusicActivity> {
     @Override
     protected android.support.test.rule.ActivityTestRule getActivityTestRule() {
         return musicActivityActivityTestRule;
+    }
+
+    @Test
+    public void testMemoryLeakOnRotate() {
+        for(int i = 0; i < 200; i++) {
+            rotateDevice(getActivity());
+            SystemClock.sleep(200);
+        }
     }
 
     /**

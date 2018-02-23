@@ -16,14 +16,14 @@ pipeline {
     stage('run lint checks') {
       steps {
             sh '''
-               ./gradlew lintFullRelease
+               #./gradlew lintFullRelease
             '''
       }
     }
     stage('run local tests') {
       steps {
             sh '''
-               ./gradlew testFullDebugUnitTest
+               #./gradlew testFullDebugUnitTest
             '''
       }
     }
@@ -31,8 +31,8 @@ pipeline {
       steps {
            timeout(time: 3, unit: 'MINUTES') {
             sh '''
-                avdmanager -v create avd -f -g google_apis -b x86 -d 'Nexus 5' -n test -c 100M -k 'system-images;android-26;google_apis;x86 -p $ANDROID_HOME/.android/'
-                cp tools/jenkins/config.ini ~/.android/avd/test.avd/
+                avdmanager -v create avd -f -g google_apis -b x86 -d 'Nexus 5' -n test -c 100M -k 'system-images;android-26;google_apis;x86'
+                cp tools/jenkins/config.ini $HOME/.android/avd/test.avd/
             '''
             }
            timeout(time: 10, unit: 'MINUTES') {
@@ -41,7 +41,12 @@ pipeline {
             '''
            }
            sh '''
-              ./gradlew connectedInstrumentationTestDebugAndroidTest
+                # restart adb just to be sure it is available
+                adb kill-server
+                adb start-server
+           '''
+           sh '''
+                ./gradlew connectedInstrumentationTestDebugAndroidTest
            '''
            timeout(time: 10, unit: 'MINUTES') {
                sh '''./tools/jenkins/manage_emulator.sh -p test'''

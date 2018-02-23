@@ -151,11 +151,17 @@ dependencies {
 
 def adb = android.getAdbExecutable().toString()
 
-task grantTestPermissions(type: Exec, dependsOn: 'installInstrumentationTestDebug') {
+task grantTestPermissions(dependsOn: 'installInstrumentationTestDebug') {
     doFirst {
-        commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.SET_ANIMATION_SCALE".split(' ')
-        commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.WRITE_EXTERNAL_STORAGE".split(' ')
-        commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.READ_EXTERNAL_STORAGE".split(' ')
+        exec {
+            commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.SET_ANIMATION_SCALE".split(' ')
+        }
+        exec {
+            commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.WRITE_EXTERNAL_STORAGE".split(' ')
+        }
+        exec {
+            commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.READ_EXTERNAL_STORAGE".split(' ')
+        }
     }
 }
 

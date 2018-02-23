@@ -1,1 +1,6 @@
 This directory holds tools for continuous integration building via jenkins atm.
+
+AVD requirements
+================
+
+* Minimum of 1024 RAM. This is needed to load the test data into memory.
