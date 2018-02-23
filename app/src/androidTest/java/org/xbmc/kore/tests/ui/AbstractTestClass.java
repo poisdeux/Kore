@@ -16,13 +16,11 @@
 
 package org.xbmc.kore.tests.ui;
 
-import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.test.espresso.IdlingRegistry;
 import android.support.test.rule.ActivityTestRule;
-import android.support.test.rule.GrantPermissionRule;
 import android.support.test.runner.AndroidJUnit4;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.preference.PreferenceManager;
@@ -82,12 +80,6 @@ abstract public class AbstractTestClass<T extends AppCompatActivity> {
     private static InputHandler inputHandler;
 
     private HostInfo hostInfo;
-
-    @Rule
-    public GrantPermissionRule mRuntimePermissionRule = GrantPermissionRule.grant(
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.SET_ANIMATION_SCALE);
 
     @Rule
     public TakeScreenshotRule takeScreenshotRule = new TakeScreenshotRule();

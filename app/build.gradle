@@ -150,6 +150,15 @@ dependencies {
 }
 
 def adb = android.getAdbExecutable().toString()
+
+task grantTestPermissions(type: Exec, dependsOn: 'installInstrumentationTestDebug') {
+    doFirst {
+        commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.SET_ANIMATION_SCALE".split(' ')
+        commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.WRITE_EXTERNAL_STORAGE".split(' ')
+        commandLine "$adb shell pm grant $android.productFlavors.instrumentationTest.applicationId android.permission.READ_EXTERNAL_STORAGE".split(' ')
+    }
+}
+
 def logOutputReader
 def process
 task startLogOutputReader {
@@ -211,6 +220,7 @@ tasks.whenTaskAdded { task ->
 
     if (task.name.contains("connectedInstrumentationTestDebugAndroidTest")) {
         connectedInstrumentationTestDebugAndroidTest.dependsOn startLogOutputReader
+        connectedInstrumentationTestDebugAndroidTest.dependsOn grantTestPermissions
         connectedInstrumentationTestDebugAndroidTest.finalizedBy copyScreenshots
     }
 }
