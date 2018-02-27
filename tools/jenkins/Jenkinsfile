@@ -5,6 +5,12 @@ pipeline {
 	args '-u root:root --privileged'
     }    
   }
+  environment {
+    TEST_RESULTS_DIR = "test-results/${BUILD_ID}"
+    LINT_TESTS_DIR = "${TEST_RESULTS_DIR}/lint-checks"
+    UNIT_TESTS_DIR = "${TEST_RESULTS_DIR}/unit-tests"
+    INSTRUMENTATION_TESTS_DIR = "${TEST_RESULTS_DIR}/android-device-tests"
+  }
   stages {
     stage('build') {
         steps {
@@ -16,14 +22,18 @@ pipeline {
     stage('run lint checks') {
       steps {
             sh '''
-               #./gradlew lintFullRelease
+                ./gradlew lintFullRelease
+                mkdir -p ${LINT_TESTS_DIR}
+                mv app/build/reports/*.xml ${LINT_TESTS_DIR}
             '''
       }
     }
     stage('run local tests') {
       steps {
             sh '''
-               #./gradlew testFullDebugUnitTest
+                ./gradlew testFullDebugUnitTest
+                mkdir -p ${UNIT_TESTS_DIR}
+                mv app/build/test-results/testFullDebugUnitTest/*.xml ${UNIT_TESTS_DIR}
             '''
       }
     }
@@ -46,7 +56,9 @@ pipeline {
                 adb start-server
            '''
            sh '''
-                ./gradlew connectedInstrumentationTestDebugAndroidTest
+               ./gradlew connectedInstrumentationTestDebugAndroidTest
+               mkdir -p ${INSTRUMENTATION_TESTS_DIR}
+               mv app/build/outputs/androidTest-results/connected/flavors/INSTRUMENTATIONTEST/*.xml ${INSTRUMENTATION_TESTS_DIR}
            '''
            timeout(time: 10, unit: 'MINUTES') {
                sh '''./tools/jenkins/manage_emulator.sh -p test'''
@@ -56,8 +68,9 @@ pipeline {
   }
   post {
     always {
-        junit './app/build/outputs/androidTest-results/**/*.xml'
-        androidLint canComputeNew: false, defaultEncoding: '', healthy: '', pattern: './app/build/reports/lint-results*.xml', unHealthy: ''
+        junit "${UNIT_TESTS_DIR}/*.xml"
+        junit "${INSTRUMENTATION_TESTS_DIR}/*.xml"
+        androidLint canComputeNew: false, defaultEncoding: '', healthy: '', pattern: "${LINT_TESTS_DIR}/*.xml", unHealthy: ''
     }
   }
 }

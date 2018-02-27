@@ -177,7 +177,7 @@ task startLogOutputReader {
 
 def screenshotsDirFile
 def screenshotsDir
-def saveLocation
+def saveLocation;
 task parseLogOutputReader(dependsOn: startLogOutputReader) {
     doFirst {
         def logOutputSize = process.getInputStream().available()
@@ -190,8 +190,12 @@ task parseLogOutputReader(dependsOn: startLogOutputReader) {
 
             println "screenshotsDir $screenshotsDir"
 
-            def dateFormat = new SimpleDateFormat("yyyyMMdd-hhmm");
-            saveLocation = "build/tests/" + dateFormat.format(new Date())
+            if (hasProperty("saveTestDir")) {
+                saveLocation = saveTestDir
+            } else {
+                saveLocation = "test-results" + new SimpleDateFormat("yyyyMMdd-hhmm").format(new Date())
+            }
+
             screenshotsDirFile = new File(saveLocation)
         }
     }
