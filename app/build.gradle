@@ -177,7 +177,7 @@ task startLogOutputReader {
 
 def screenshotsDirFile
 def screenshotsDir
-def saveLocation;
+def saveLocation
 task parseLogOutputReader(dependsOn: startLogOutputReader) {
     doFirst {
         def logOutputSize = process.getInputStream().available()

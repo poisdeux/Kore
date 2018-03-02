@@ -54,24 +54,19 @@ function start_device {
     ./emulator -avd "${DEVICENAME}" ${EMULATOR_OPTS} &
     EMULATOR_PID=$!
 
+    adb wait-for-device
+
     TIMEOUT=100
-    while ! adb -e shell getprop > /dev/null 2>&1
+    while ! adb -e shell getprop init.svc.installd | grep -q running
     do
         sleep 1
 
         if [ $((TIMEOUT--)) -lt 1 ]
         then
-            echo "Error: emulator timed out"
+            echo "Error: starting of installd timed out"
             kill_emulator ${EMULATOR_PID}
             exit 1
         fi
-    done
-
-    BOOTANIM="$(adb -e shell getprop init.svc.bootanim)"
-    while [ "${BOOTANIM//$'\r'}" != "stopped" ]
-    do
-        sleep 1
-        BOOTANIM="$(adb -e shell getprop init.svc.bootanim)"
     done
 }
 

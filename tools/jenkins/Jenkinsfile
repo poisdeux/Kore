@@ -20,9 +20,11 @@ pipeline {
         }
     }
     stage('run lint checks') {
-      steps {
+        steps {
+            catchError {
+                sh './gradlew lintFullRelease'
+            }
             sh '''
-                ./gradlew lintFullRelease
                 mkdir -p ${LINT_TESTS_DIR}
                 mv app/build/reports/*.xml ${LINT_TESTS_DIR}
             '''
@@ -55,10 +57,12 @@ pipeline {
                 adb kill-server
                 adb start-server
            '''
+           catchError {
+                sh './gradlew -PsaveTestDir="${INSTRUMENTATION_TESTS_DIR}/screenshots" connectedInstrumentationTestDebugAndroidTest'
+           }
            sh '''
-               ./gradlew connectedInstrumentationTestDebugAndroidTest
-               mkdir -p ${INSTRUMENTATION_TESTS_DIR}
-               mv app/build/outputs/androidTest-results/connected/flavors/INSTRUMENTATIONTEST/*.xml ${INSTRUMENTATION_TESTS_DIR}
+                mkdir -p ${INSTRUMENTATION_TESTS_DIR}
+                mv app/build/reports/tests/testFullDebugUnitTest/ ${INSTRUMENTATION_TESTS_DIR}
            '''
            timeout(time: 10, unit: 'MINUTES') {
                sh '''./tools/jenkins/manage_emulator.sh -p test'''
@@ -69,7 +73,6 @@ pipeline {
   post {
     always {
         junit "${UNIT_TESTS_DIR}/*.xml"
-        junit "${INSTRUMENTATION_TESTS_DIR}/*.xml"
         androidLint canComputeNew: false, defaultEncoding: '', healthy: '', pattern: "${LINT_TESTS_DIR}/*.xml", unHealthy: ''
     }
   }
