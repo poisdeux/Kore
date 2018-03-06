@@ -49,29 +49,37 @@ function show_status {
     adb get-state
 }
 
+function is_device_ready {
+    if adb shell pm list packages > /dev/null 2>&1
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
 function start_device {
     eval cd "${ANDROID_HOME}/emulator"
     ./emulator -avd "${DEVICENAME}" ${EMULATOR_OPTS} &
     EMULATOR_PID=$!
 
-    adb wait-for-device
-
     TIMEOUT=100
-    while ! adb -e shell getprop init.svc.installd | grep -q running
+    while [ $((TIMEOUT--)) -gt 0 ]
     do
+        is_device_ready && break
         sleep 1
-
-        if [ $((TIMEOUT--)) -lt 1 ]
-        then
-            echo "Error: starting of installd timed out"
-            kill_emulator ${EMULATOR_PID}
-            exit 1
-        fi
     done
+
+    if ! is_device_ready
+    then
+        echo "Error: starting of emulator timed out"
+        kill_emulator ${EMULATOR_PID}
+        exit 1
+    fi
 }
 
 export PATH=/bin/:/usr/bin:${ANDROID_HOME}/tools/bin:${ANDROID_HOME}/platform-tools
-EMULATOR_OPTS="-no-boot-anim"
+EMULATOR_OPTS=""
 POWEROFF_DEVICE=0
 START_DEVICE=0
 
