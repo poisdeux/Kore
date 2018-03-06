@@ -1,79 +1,58 @@
 pipeline {
-  agent { 
-    docker { 
-	image 'poisdeux/kore'
-	args '-u root:root --privileged'
-    }    
-  }
-  environment {
-    TEST_RESULTS_DIR = "test-results/${BUILD_ID}"
-    LINT_TESTS_DIR = "${TEST_RESULTS_DIR}/lint-checks"
-    UNIT_TESTS_DIR = "${TEST_RESULTS_DIR}/unit-tests"
-    INSTRUMENTATION_TESTS_DIR = "${TEST_RESULTS_DIR}/android-device-tests"
-  }
-  stages {
-    stage('build') {
-        steps {
-            sh '''
-                ./gradlew clean assembleFullRelease
-            '''
+    agent {
+        docker {
+            image 'poisdeux/kore'
+            args '-u root:root --privileged'
         }
     }
-    stage('run lint checks') {
-        steps {
-            catchError {
-                sh './gradlew lintFullRelease'
+    environment {
+        TEST_RESULTS_DIR = "test-results/${BUILD_ID}"
+        INSTRUMENTATION_TESTS_DIR = "${TEST_RESULTS_DIR}/android-device-tests"
+    }
+    stages {
+        stage('build') {
+            steps {
+                sh './gradlew clean assembleFullRelease'
             }
-            sh '''
-                mkdir -p ${LINT_TESTS_DIR}
-                mv app/build/reports/*.xml ${LINT_TESTS_DIR}
-            '''
-      }
-    }
-    stage('run local tests') {
-      steps {
-            sh '''
-                ./gradlew testFullDebugUnitTest
-                mkdir -p ${UNIT_TESTS_DIR}
-                mv app/build/test-results/testFullDebugUnitTest/*.xml ${UNIT_TESTS_DIR}
-            '''
-      }
-    }
-    stage('run device tests') {
-      steps {
-           timeout(time: 3, unit: 'MINUTES') {
-            sh '''
+        }
+        stage('run lint checks') {
+            steps {
+                catchError {
+                    sh './gradlew lintFullRelease'
+                }
+                androidLint canComputeNew: false, canRunOnFailed: true, defaultEncoding: '', healthy: '', pattern: "app/build/reports/*.xml", unHealthy: ''
+            }
+        }
+        stage('run local tests') {
+            steps {
+                catchError {
+                    sh './gradlew testFullDebugUnitTest'
+                }
+                junit "app/build/test-results/testFullDebugUnitTest/*.xml"
+            }
+        }
+        stage('run device tests') {
+            steps {
+                timeout(time: 3, unit: 'MINUTES') {
+                    sh '''
                 avdmanager -v create avd -f -g google_apis -b x86 -d 'Nexus 5' -n test -c 100M -k 'system-images;android-26;google_apis;x86'
                 cp tools/jenkins/config.ini $HOME/.android/avd/test.avd/
             '''
+                }
+
+                timeout(time: 10, unit: 'MINUTES') {
+                    sh './tools/jenkins/manage_emulator.sh -d test'
+                }
+
+                catchError {
+                    sh './gradlew -PsaveTestDir="${INSTRUMENTATION_TESTS_DIR}/screenshots" connectedInstrumentationTestDebugAndroidTest'
+                }
+                junit "**/androidTest-results/connected/flavors/INSTRUMENTATIONTEST/**/*.xml"
+
+                timeout(time: 10, unit: 'MINUTES') {
+                    sh '''./tools/jenkins/manage_emulator.sh -p test'''
+                }
             }
-           timeout(time: 10, unit: 'MINUTES') {
-            sh '''
-                ./tools/jenkins/manage_emulator.sh -d test
-            '''
-           }
-           sh '''
-                # restart adb just to be sure it is available
-                adb kill-server
-                adb start-server
-           '''
-           catchError {
-                sh './gradlew -PsaveTestDir="${INSTRUMENTATION_TESTS_DIR}/screenshots" connectedInstrumentationTestDebugAndroidTest'
-           }
-           sh '''
-                mkdir -p ${INSTRUMENTATION_TESTS_DIR}
-                mv app/build/reports/tests/testFullDebugUnitTest/ ${INSTRUMENTATION_TESTS_DIR}
-           '''
-           timeout(time: 10, unit: 'MINUTES') {
-               sh '''./tools/jenkins/manage_emulator.sh -p test'''
-           }
-      }
+        }
     }
-  }
-  post {
-    always {
-        junit "${UNIT_TESTS_DIR}/*.xml"
-        androidLint canComputeNew: false, defaultEncoding: '', healthy: '', pattern: "${LINT_TESTS_DIR}/*.xml", unHealthy: ''
-    }
-  }
 }
