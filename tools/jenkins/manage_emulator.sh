@@ -3,12 +3,14 @@
 [ -z "${ANDROID_HOME}" ] && echo "ERROR: ANDROID_HOME variable not defined" && exit 1
 
 function usage {
-    echo "Usage: $0 -l | -[dpsl]... DEVICE_NAME"
+    echo "Usage: $0 -l | -[deopsl]... DEVICE_NAME"
     echo
     echo "  -d      run device in daemon mode (default: get status)"
     echo "  -p      poweroff device"
     echo "  -s      start device in foreground (default: get status)"
     echo "  -l      list available virtual devices"
+    echo "  -o      disable animations globally on device"
+    echo "  -e      enable animations globally on device"
     echo
 }
 
@@ -78,12 +80,25 @@ function start_device {
     fi
 }
 
+function enable_animations {
+	adb shell settings put global window_animation_scale 1 
+	adb shell settings put global transition_animation_scale 1
+	adb shell settings put global animator_duration_scale 1
+}
+
+function disable_animations {
+	adb shell settings put global window_animation_scale 0
+	adb shell settings put global transition_animation_scale 0
+	adb shell settings put global animator_duration_scale 0
+}
+
 export PATH=/bin/:/usr/bin:${ANDROID_HOME}/tools/bin:${ANDROID_HOME}/platform-tools
 EMULATOR_OPTS=""
 POWEROFF_DEVICE=0
 START_DEVICE=0
+ENABLE_ANIMS=-1
 
-while getopts ":dpsl" opt
+while getopts ":doepsl" opt
 do
     case $opt in
         d)
@@ -100,6 +115,12 @@ do
             list_devices
             exit 0
         ;;
+		e)
+			ENABLE_ANIMS=1
+		;;
+		o)
+			ENABLE_ANIMS=0
+		;;
         \?)
             usage
             exit 1
@@ -123,3 +144,5 @@ else
     show_status
 fi
 
+[ ${ENABLE_ANIMS} -eq 1 ] && enable_animations
+[ ${ENABLE_ANIMS} -eq 0 ] && disable_animations
