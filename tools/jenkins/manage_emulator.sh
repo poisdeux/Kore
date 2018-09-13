@@ -13,6 +13,9 @@ UNLOCK_AVD=0
 AVD_NAME="test"
 TARGET="android-27"
 PORT=5556
+LOG_FILE="${PWD}/${0}.log"
+
+trap cleanup INT
 
 function usage {
     echo "Usage: $0 -l | -[dpsloewctnr]..."
@@ -33,40 +36,9 @@ function usage {
     echo
 }
 
-function kill_emulator {
-    if ! ps -p $EMULATOR_PID > /dev/null 2>&1
-    then
-        return 1
-    fi
-
-    #we start asking nicely
-    kill ${EMULATOR_PID}
-
-    COUNT=10
-    while ps -p $EMULATOR_PID > /dev/null 2>&1 && [ $((COUNT--)) -gt 0 ]
-    do
-        sleep 0.2
-    done
-
-    #don't want to listen?
-    if ps -p ${EMULATOR_PID} > /dev/null 2>&1
-    then
-        #eat this!
-        kill -9 ${EMULATOR_PID}
-    fi
-}
-
-function poweroff_device {
-	adb shell reboot -p
-}
-
-function list_devices {
-    avdmanager list avd
-}
-
-function is_device_ready {
-    BOOT_COMPLETE="$(adb shell getprop sys.boot_completed 2>&1 | tr -d '\r' | grep 1)"
-    if [ "${BOOT_COMPLETE}" = "1" ] && adb shell pm list packages > /dev/null 2>&1 
+function is_process_alive {
+    [ -z ${1} ] && echo "Error: get_emulator_pid requires AVD name as argument" && exit 1
+    if ps -p ${1} > /dev/null 2>&1
     then
         return 0
     else
@@ -74,8 +46,105 @@ function is_device_ready {
     fi
 }
 
+function kill_emulator {
+    PID=${1}
+
+    # is process actually running?
+    ps -p ${PID} > /dev/null 2>&1 || return
+
+    #we start asking nicely
+    kill ${PID}
+
+    COUNT=10
+    while ps -p ${PID} > /dev/null 2>&1 && [ $((COUNT--)) -gt 0 ]
+    do
+        sleep 0.2
+    done
+
+    #don't want to listen?
+    if ps -p ${PID} > /dev/null 2>&1
+    then
+        #eat this!
+        kill -9 ${PID}
+    fi
+}
+
+function get_emulator_pid {
+    [ -z ${1} ] && echo "Error: get_emulator_pid requires AVD name as argument" && exit 1
+    echo $(ps -eo pid,command | grep "qem[u].*"${1} | sed 's/^ *\([0-9][0-9]*\)[^0-9].*/\1/')
+}
+
+function poweroff_device {
+	adb shell reboot -p &
+
+	TIMEOUT=30
+	while [ $((TIMEOUT--)) -gt 0 ] && [ -z $(get_emulator_pid ${AVD_NAME}) ]
+	do
+	    sleep 1
+	done
+
+    EMULATOR_PID=$(get_emulator_pid ${AVD_NAME})
+	[ -n ${EMULATOR_PID} ] && kill_emulator ${EMULATOR_PID}
+}
+
+function cleanup {
+    kill_emulator $(get_emulator_pid ${AVD_NAME})
+}
+
+function list_devices {
+    avdmanager list avd
+}
+
+
+function wait_for_device {
+    WAIT_COUNT=60
+    RESULT_FILE=".adb_responding_check"
+
+    rm -f ${RESULT_FILE}
+
+    echo -n "Waiting on device."
+    # First test if Android OS claims to be fully booted
+    while ( ! grep '^1$' ${RESULT_FILE} > /dev/null 2>&1 ) && [ $((WAIT_COUNT--)) -gt 0 ]
+    do
+        # We need to run this in the background as sometimes adb hangs when the emulator is unresponsive
+        adb shell getprop sys.boot_completed 2>&1 | tr -d '\r' > ${RESULT_FILE} &
+        sleep 1
+        echo -n "."
+    done
+
+    rm -f ${RESULT_FILE} || exit 1
+
+    if [ ${WAIT_COUNT} -lt 1 ]
+    then
+        echo -e "\nFAILED to connect."
+        return 1
+    fi
+
+    WAIT_COUNT=30
+
+    # Second check if the package manager has started, so we can upload APK files
+    while [ -z ${RESULT_FILE} ] && [ $((WAIT_COUNT--)) -gt 0 ]
+    do
+        adb shell pm list packages 2> /dev/null > ${RESULT_FILE} &
+        sleep 1
+        echo -n ","
+    done
+
+    rm -f ${RESULT_FILE} || exit 1
+
+    if [ ${WAIT_COUNT} -lt 1 ]
+    then
+        echo -e "\nFAILED to connect."
+        return 1
+    else
+        echo -e "\nDevice online."
+        return 0
+    fi
+}
+
 function isScreenOn {
-	if adb shell dumpsys power | grep 'mScreenOn=true' > /dev/null 2>&1
+    RESULT="$(adb shell dumpsys power)"
+	if echo "${RESULT}" | grep -e 'mScreenOn=true' -e 'mWakefulness=Awake' > /dev/null 2>&1
 	then
 		return 0
 	else
@@ -123,32 +192,60 @@ function unlock_device {
 }
 
 function start_device {
-    eval cd "${ANDROID_HOME}/emulator"
-    ./emulator -port ${PORT} -avd "${AVD_NAME}" ${EMULATOR_OPTS} &
-    EMULATOR_PID=$!
-    TIMEOUT=30
-    while [ $((TIMEOUT--)) -gt 0 ]
-    do
-        is_device_ready && break
-        sleep 1
-    done
-
-    if ! is_device_ready
+    if [ -n "$(get_emulator_pid ${AVD_NAME})" ]
     then
-        echo "Error: starting of emulator timed out"
+        echo "Emulator ${ANDROID_SERIAL} already running"
+        return
+    fi
+
+    eval cd "${ANDROID_HOME}/emulator"
+    ./emulator -port ${PORT} -avd "${AVD_NAME}" ${EMULATOR_OPTS} -debug init > ${LOG_FILE} 2>&1 &
+    EMULATOR_PID=$!
+
+    if ! wait_for_device
+    then
+        echo "ERROR: Starting ${AVD_NAME} timed out. See ${LOG_FILE} for details."
         kill_emulator ${EMULATOR_PID}
         exit 1
     fi
-
-	echo "Device started and ready."
-
-	unlock_device
 }
 
 function reboot_device {
-	kill_emulator
+    REBOOT_COUNT=${1:=0}
 
-	start_device	
+    # Needs to run in the background as it sometimes hangs running on the emulator
+    adb reboot &
+    REBOOT_PID=$!
+
+    sleep 1 # prevent race condition where wait_for_device is checking current state, instead of reboot state
+
+    WAIT_COUNT=30
+
+    # Wait for reboot command to finish
+    while is_process_alive ${REBOOT_PID} && [ $((WAIT_COUNT--)) -gt 0 ]
+    do
+        sleep 1
+    done
+
+    if [ ${WAIT_COUNT} -lt 1 ]
+    then
+        echo "ERROR: Command 'adb reboot' timed out."
+        exit 1
+    fi
+
+    if ! wait_for_device
+    then
+        echo "ERROR: rebooting emulator timed out."
+        EMULATOR_PID=$(get_emulator_pid ${AVD_NAME})
+        if [ ${REBOOT_COUNT} -lt 1  ]
+        then
+            kill_emulator ${EMULATOR_PID}
+            exit 1
+        fi
+
+        echo "Trying again..."
+        reboot_device $((${REBOOT_COUNT} - 1))
+    fi
 }
 
 function enable_animations {
@@ -160,18 +257,56 @@ function enable_animations {
 function disable_animations {
 	adb shell settings put global window_animation_scale 0.0
 	adb shell settings put global transition_animation_scale 0.0
-	adb shell settings put global animator_duration_scale 0.0
+ 	adb shell settings put global animator_duration_scale 0.0
+}
+
+function animations_disabled {
+    if adb shell settings get global window_animation_scale | grep 0.0 > /dev/null 2>&1 && \
+       adb shell settings get global transition_animation_scale | grep 0.0 > /dev/null 2>&1 && \
+       adb shell settings get global animator_duration_scale | grep 0.0 > /dev/null 2>&1
+    then
+        return 0
+    else
+        return 1
+    fi
 }
 
 function create_avd {
-    avdmanager -v create avd -g google_apis -b x86 -d 'Nexus 5' -n "${AVD_NAME}" -c 100M -k "system-images;${TARGET};google_apis;x86"
+    if ! avdmanager -v create avd -g google_apis -b x86 -d 'Nexus 5' -n "${AVD_NAME}" -c 100M -k "system-images;${TARGET};google_apis;x86" > ${LOG_FILE} 2>&1
+    then
+        echo "ERROR: failed to create AVD. See ${LOG_FILE} for details"
+        exit 1
+    fi
+
+    AVD_PATH="$(avdmanager list avd | grep ${AVD_NAME}.avd | grep Path | sed 's/.*Path: //')"
+
+    sed -e '/hw.gpu.enabled.*/d' \
+        -e '/hw.gpu.mode.*/d' \
+        -e '/hw.camera.back=.*/d' \
+        -e '/hw.camera.front=.*/d' \
+        -e '/hw.ramSize=.*/d' \
+        -e '/vm.heapSize=.*/d' \
+        -e '/disk.dataPartition.size=.*/d' \
+        -i '' ${AVD_PATH}/config.ini
+
+    echo 'hw.gpu.enabled=yes' >> ${AVD_PATH}/config.ini
+    echo 'hw.gpu.mode=auto' >> ${AVD_PATH}/config.ini
+    echo 'hw.ramSize=1536' >> ${AVD_PATH}/config.ini
+    echo 'vm.heapSize=128' >> ${AVD_PATH}/config.ini
+    echo 'disk.dataPartition.size=1536m' >> ${AVD_PATH}/config.ini
+#    echo 'hw.camera.back=virtualscene' >> ${AVD_PATH}/config.ini
+#    echo 'hw.camera.front=emulated' >> ${AVD_PATH}/config.ini
 }
 
 function remove_avd {
-    avdmanager -v delete avd -n "${AVD_NAME}"
+    if ! avdmanager -v delete avd -n "${AVD_NAME}" > ${LOG_FILE} 2>&1
+    then
+        echo "ERROR: failed to remove ${AVD_NAME}. See ${LOG_FILE} for details"
+        exit 1
+    fi
 }
 
-while getopts "t:n:u:r:cdoepslwx?" opt
+while getopts "t:n:u:rbcdepslwx?" opt
 do
     case $opt in
         b)
@@ -224,8 +359,6 @@ done
 
 shift $((OPTIND-1))
 
-EMULATOR_PID=$(ps -o pid,command | grep [$]{AVD_NAME} | tr -s ' ' | cut -d ' ' -f 2)
-
 export ANDROID_SERIAL="emulator-${PORT}"
 
 if [ ${START_DEVICE} -eq 1 ]
@@ -233,7 +366,7 @@ then
     start_device
 elif [ ${POWEROFF_DEVICE} -eq 1 ]
 then
-    poweroff_device
+    kill_emulator $(get_emulator_pid ${AVD_NAME})
 elif [ ${CREATE_AVD} -eq 1 ]
 then
     create_avd
@@ -244,16 +377,36 @@ fi
 
 if [ ${ENABLE_ANIMS} -eq 1 ]
 then
+    if ! wait_for_device
+    then
+        echo "ERROR: Device $ANDROID_SERIAL not ready."
+        exit 1
+    fi
+
 	echo "Enabling animations"
 	enable_animations
 elif [ ${ENABLE_ANIMS} -eq 0 ]
 then
-	echo "Disabling animations"	
-	disable_animations
-	echo "Rebooting device to make changes effective"
-	poweroff_device
-	start_device
+    if ! wait_for_device
+    then
+        echo "ERROR: Device $ANDROID_SERIAL not ready."
+        exit 1
+    fi
+
+    if ! animations_disabled
+    then
+	    echo "Disabling animations"
+	    disable_animations
+
+	    SDK_VERSION=$(adb shell getprop ro.build.version.sdk | tr -d '\r')
+	    if [ ${SDK_VERSION} -lt 24 ]
+	    then
+	        echo "Rebooting device to make changes effective"
+            reboot_device 2 || exit 1
+        fi
+    fi
 fi
 
 [ ${UNLOCK_AVD} -eq 1 ] && unlock_device
 
+exit 0
