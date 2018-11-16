@@ -1,8 +1,23 @@
 #!/bin/bash
+#
+#   Copyright 2017 Martijn Brekhof. All rights reserved.
+#
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
 
-[ -z "${ANDROID_HOME}" ] && echo "ERROR: ANDROID_HOME variable not defined" && exit 1
 
-export PATH=/bin/:/usr/bin:${ANDROID_HOME}/tools/bin:${ANDROID_HOME}/platform-tools
+[ -z "${ANDROID_SDK_ROOT}" ] && echo "ERROR: ANDROID_SDK_ROOT variable not defined" && exit 1
+
+export PATH=/bin/:/usr/bin:${ANDROID_SDK_ROOT}/tools/bin:${ANDROID_SDK_ROOT}/platform-tools
 EMULATOR_OPTS="-no-snapshot -gpu host"
 POWEROFF_DEVICE=0
 START_DEVICE=0
@@ -11,6 +26,9 @@ CREATE_AVD=0
 REMOVE_AVD=0
 UNLOCK_AVD=0
 AVD_NAME="test"
+AVD_MODEL="Nexus 5"
+AVD_RAM="1536"
+AVD_HEAP="128"
 TARGET="android-27"
 PORT=5556
 LOG_FILE="${PWD}/${0}.log"
@@ -18,20 +36,23 @@ LOG_FILE="${PWD}/${0}.log"
 trap cleanup INT
 
 function usage {
-    echo "Usage: $0 -l | -[dpsloewctnr]..."
+    echo "Usage: $0 -l | [-bcdelprswx] [-H <MEBI>] [-m <MEBI>] [-n <NAME>] [-o <MODEL>] [-t <ANDROID_SDK>] [-u <PORT>]"
     echo
     echo "  -b      run device in daemon mode"
-    echo "  -p      poweroff device"
-    echo "  -s      start device in foreground"
-    echo "  -l      list available virtual devices"
+    echo "  -c      create new virtual device (avd)"
     echo "  -d      disable animations globally on device"
     echo "  -e      enable animations globally on device"
-    echo "  -w      wipe data storage from device"
-    echo "  -c      create new virtual device (avd)"
-    echo "  -t      specify target name for new avd (default: ${TARGET})"
+    echo "  -H      specify device heap (default: ${AVD_HEAP})"
+    echo "  -l      list available virtual devices"
+    echo "  -m      specify device RAM (default: ${AVD_RAM})"
     echo "  -n      specify device name (default: ${AVD_NAME})"
-    echo "  -u      port number for emulator (default: ${PORT})"
+    echo "  -o      specify device model (default: ${AVD_MODEL})"
+    echo "  -p      poweroff device"
     echo "  -r      remove virtual device"
+    echo "  -s      start device in foreground"
+    echo "  -t      specify target name for new avd (default: ${TARGET})"
+    echo "  -u      port number for emulator (default: ${PORT})"
+    echo "  -w      wipe data storage from device"
     echo "  -x      unlock device"
     echo
 }
@@ -97,7 +118,7 @@ function list_devices {
 
 
 function wait_for_device {
-    WAIT_COUNT=60
+    WAIT_COUNT=120
     RESULT_FILE=".adb_responding_check"
 
     rm -f ${RESULT_FILE}
@@ -198,7 +219,7 @@ function start_device {
         return
     fi
 
-    eval cd "${ANDROID_HOME}/emulator"
+    eval cd "${ANDROID_SDK_ROOT}/emulator"
     ./emulator -port ${PORT} -avd "${AVD_NAME}" ${EMULATOR_OPTS} -debug init > ${LOG_FILE} 2>&1 &
     EMULATOR_PID=$!
 
@@ -272,7 +293,7 @@ function animations_disabled {
 }
 
 function create_avd {
-    if ! avdmanager -v create avd -g google_apis -b x86 -d 'Nexus 5' -n "${AVD_NAME}" -c 100M -k "system-images;${TARGET};google_apis;x86" > ${LOG_FILE} 2>&1
+    if ! avdmanager -v create avd -g google_apis -b x86 -d "${AVD_MODEL}" -n "${AVD_NAME}" -c 200M -k "system-images;${TARGET};google_apis;x86" > ${LOG_FILE} 2>&1
     then
         echo "ERROR: failed to create AVD. See ${LOG_FILE} for details"
         exit 1
@@ -291,11 +312,11 @@ function create_avd {
 
     echo 'hw.gpu.enabled=yes' >> ${AVD_PATH}/config.ini
     echo 'hw.gpu.mode=auto' >> ${AVD_PATH}/config.ini
-    echo 'hw.ramSize=1536' >> ${AVD_PATH}/config.ini
-    echo 'vm.heapSize=128' >> ${AVD_PATH}/config.ini
+    echo "hw.ramSize=${AVD_RAM}" >> ${AVD_PATH}/config.ini
+    echo "vm.heapSize=${AVD_HEAP}" >> ${AVD_PATH}/config.ini
     echo 'disk.dataPartition.size=1536m' >> ${AVD_PATH}/config.ini
-#    echo 'hw.camera.back=virtualscene' >> ${AVD_PATH}/config.ini
-#    echo 'hw.camera.front=emulated' >> ${AVD_PATH}/config.ini
+    echo 'hw.camera.back=virtualscene' >> ${AVD_PATH}/config.ini
+    echo 'hw.camera.front=emulated' >> ${AVD_PATH}/config.ini
 }
 
 function remove_avd {
@@ -306,49 +327,58 @@ function remove_avd {
     fi
 }
 
-while getopts "t:n:u:rbcdepslwx?" opt
+while getopts "H:m:n:o:t:u:bcdelprswx?" opt
 do
     case $opt in
+        H)
+            AVD_HEAP="${OPTARG}"
+        ;;
+        m)
+            AVD_RAM="${OPTARG}"
+        ;;
+        n)
+            AVD_NAME="${OPTARG}"
+        ;;
+        o)
+            AVD_MODEL="${OPTARG}"
+        ;;
+        t)
+            TARGET=${OPTARG}
+        ;;
+        u)
+            PORT=${OPTARG}
+        ;;
         b)
             EMULATOR_OPTS="${EMULATOR_OPTS} -no-window -no-audio"
             START_DEVICE=1
         ;;
-        p)
-            POWEROFF_DEVICE=1
+        c)
+            CREATE_AVD=1
         ;;
-        s)
-            START_DEVICE=1
+        d)
+            ENABLE_ANIMS=0
+        ;;
+        e)
+            ENABLE_ANIMS=1
         ;;
         l)
             list_devices
             exit 0
         ;;
-		e)
-			ENABLE_ANIMS=1
-		;;
-		d)
-			ENABLE_ANIMS=0
-		;;
-		w)
-			EMULATOR_OPTS="${EMULATOR_OPTS} -wipe-data"
-		;;
-		c)
-			CREATE_AVD=1
-		;;
-		n)
-			AVD_NAME=${OPTARG}
-		;;
-		t)
-			TARGET=${OPTARG}
-		;;
-		u)
-			PORT=${OPTARG}
-		;;
-		r)
-			REMOVE_AVD=1
-		;;
-		x)
-			UNLOCK_AVD=1
+        p)
+            POWEROFF_DEVICE=1
+        ;;
+        r)
+            REMOVE_AVD=1
+        ;;
+        s)
+            START_DEVICE=1
+        ;;
+        w)
+            EMULATOR_OPTS="${EMULATOR_OPTS} -wipe-data"
+        ;;
+        x)
+            UNLOCK_AVD=1
 		;;
         \?)
             usage
