@@ -1,0 +1,79 @@
+@startuml
+
+ActivityOrFragment ->> HostManager: withCurrentHost(HostAction, Listener)
+activate HostManager
+HostManager -> HostManager: Add listener to list
+create HostConnection
+HostManager -> HostConnection: getConnection()
+activate HostConnection
+return HostConnection
+HostManager -> HostAction: using()
+note left: using() runs on background thread
+deactivate HostManager
+activate HostAction
+
+alt using ApiFuture directly
+create ApiFuture
+HostAction -> ApiFuture:
+activate ApiFuture
+return ApiFuture
+deactivate ApiFuture
+HostAction -> HostConnection: execute(ApiFuture)
+activate HostConnection
+else using ApiMethod
+HostAction -> HostConnection: execute(ApiMethod)
+return ApiFuture
+end
+activate HostConnection
+HostAction -> ApiFuture: get()
+activate HostConnection
+note left: blocks until setResult has been called
+deactivate HostAction
+activate ApiFuture
+activate ApiFuture
+create ApiCallback
+HostConnection -> ApiCallback: create ApiCallback
+activate ApiCallback
+return ApiCallback
+HostConnection -> HostConnection: execute(ApiMethod, ApiCallback)
+activate HostConnection
+HostConnection -> Server: send JSON request
+activate Server
+Server -> HostConnection: send JSON result
+deactivate Server
+note left
+    execution may be synchronous using HTTP
+    or asynchronous using TCP. In both cases
+    the handled in a similar way by HostConnection
+end note
+HostConnection -> ApiCallback:
+activate ApiCallback
+alt success
+ApiCallback --> HostConnection: onSucces(result)
+HostConnection -> ApiFuture: setResult(result, null)
+else error
+ApiCallback --> HostConnection: onError(errorCode, description)
+create ApiException
+HostConnection -> ApiException:
+activate ApiException
+return ApiException
+HostConnection -> ApiFuture: setResult(result, ApiException)
+end
+deactivate HostConnection
+deactivate HostConnection
+deactivate ApiCallback
+return ApiFuture
+activate HostAction
+alt ApiFuture status equals ERROR
+HostAction --> HostManager: throw ApiException
+activate HostManager
+HostManager -> ActivityOrFragment: onError(ApiException)
+deactivate HostManager
+else
+HostAction --> HostManager: result
+activate HostManager
+HostManager -> ActivityOrFragment: onSuccess(result)
+deactivate HostAction
+deactivate HostManager
+end
+@enduml
