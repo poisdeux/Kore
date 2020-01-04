@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: "com.github.triplet.play"
 
 def getVersionName = { ->
     def stdout = new ByteArrayOutputStream()
@@ -9,6 +10,14 @@ def getVersionName = { ->
     return stdout.toString().trim()
 }
 
+def getVersionCode = { ->
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine 'git', 'rev-list', '--count', 'master'
+        standardOutput = stdout
+    }
+    return stdout.toString().trim().toInteger()
+}
 
 android {
     compileSdkVersion 28
@@ -18,7 +27,7 @@ android {
         applicationId "org.xbmc.kore"
         minSdkVersion 15
         targetSdkVersion 28
-        versionCode 26
+        versionCode = getVersionCode()
         versionName = getVersionName()
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -131,6 +140,14 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 }
 
+play {
+    def SERVICE_ACCOUNT_CREDENTIALS_FILE = System.getenv('SERVICE_ACCOUNT_CREDENTIALS_FILE')
+    if ( SERVICE_ACCOUNT_CREDENTIALS_FILE == null ) {
+        SERVICE_ACCOUNT_CREDENTIALS_FILE = "dummy.json"
+    }
+    serviceAccountCredentials = file(SERVICE_ACCOUNT_CREDENTIALS_FILE)
+}
+
 def adb = android.getAdbExecutable().toString()
 afterEvaluate {
     task grantAnimationPermissionDev(type: Exec, dependsOn: installDebug) {
@@ -153,4 +170,9 @@ tasks.whenTaskAdded { task ->
     if (task.name.contains("testDebugUnitTest")) {
         task.dependsOn assembleDebug
     }
+}
+
+task printVersion() {
+    println("Version Name: $getVersionName")
+    println("Version Code: $getVersionCode")
 }
