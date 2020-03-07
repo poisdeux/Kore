@@ -15,14 +15,15 @@
    limitations under the License.
 -->
 
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <include layout="@layout/empty_view"/>
 
     <android.support.v4.widget.SwipeRefreshLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/swipe_refresh_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -33,4 +34,16 @@
             style="@style/GridLayoutRecyclerView"/>
     </android.support.v4.widget.SwipeRefreshLayout>
 
-</FrameLayout>
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_anchor="@id/media_panel"
+        app:layout_anchorGravity="bottom|end|right"
+        app:layout_behavior="org.xbmc.kore.ui.behaviors.FABSpeedDialBehavior"
+        app:layout_scrollFlags="scroll|enterAlways"
+        android:orientation="vertical"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:src="@drawable/ic_shuffle_white_24dp"/>
+</android.support.design.widget.CoordinatorLayout>

@@ -35,6 +35,7 @@ import android.widget.TextView;
 import org.xbmc.kore.R;
 import org.xbmc.kore.Settings;
 import org.xbmc.kore.ui.viewgroups.RecyclerViewEmptyViewSupport;
+import org.xbmc.kore.ui.widgets.fabspeeddial.FABSpeedDial;
 import org.xbmc.kore.utils.LogUtils;
 
 import butterknife.BindView;
@@ -54,6 +55,12 @@ public abstract class AbstractListFragment extends Fragment implements
 
 	abstract protected RecyclerViewEmptyViewSupport.OnItemClickListener createOnItemClickListener();
 	abstract protected RecyclerViewEmptyViewSupport.Adapter createAdapter();
+
+	/**
+	 * Called when the fab button is available
+	 * @return true to enable the Floating Action Button, false otherwise
+	 */
+	abstract protected boolean setupFAB(FABSpeedDial FAB);
 
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
